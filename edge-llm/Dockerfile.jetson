@@ -1,0 +1,25 @@
+# Imagen Jetson L4T (NVIDIA) para Orin Nano. Para dev local usar la otra variante CPU.
+FROM nvcr.io/nvidia/l4t-jetpack:r36.3.0
+
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip python3-venv libgl1 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# H-ALT-006: usuario sin privilegios
+RUN useradd -r -u 10001 -m -d /home/cupula cupula \
+    && chown -R cupula:cupula /app
+
+COPY --chown=cupula:cupula pyproject.toml ./
+RUN pip3 install --no-cache-dir \
+        numpy pillow structlog jsonschema pydantic pymavlink \
+        onnxruntime-gpu
+
+COPY --chown=cupula:cupula pipeline ./pipeline
+COPY --chown=cupula:cupula models ./models
+
+USER cupula
+CMD ["python3", "-m", "pipeline.orchestrator", "--loop"]

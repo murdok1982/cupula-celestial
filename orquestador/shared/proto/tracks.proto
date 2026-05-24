@@ -1,0 +1,67 @@
+syntax = "proto3";
+package cupula.tracks.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Track {
+    string track_id = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    State state = 3;
+    Covariance covariance = 4;
+    Classification classification = 5;
+    IFFStatus iff = 6;
+    KinematicProfile profile = 7;
+    repeated SensorContribution sources = 8;
+    float track_quality = 9;          // 0..1
+    string imm_mode = 10;             // "CV" | "CA" | "CT"
+    int32 hits = 11;                  // M/N
+    int32 misses = 12;
+}
+
+message State {
+    double px_m = 1; double py_m = 2; double pz_m = 3;   // ECEF / local ENU
+    double vx_mps = 4; double vy_mps = 5; double vz_mps = 6;
+    double ax_mps2 = 7; double ay_mps2 = 8; double az_mps2 = 9;
+    double latitude = 10; double longitude = 11; double altitude_msl_m = 12;
+}
+
+message Covariance {
+    repeated double matrix = 1;       // row-major 9x9 = 81 elementos
+}
+
+message Classification {
+    ThreatClass cls = 1;
+    float confidence = 2;
+    map<string, float> ensemble_scores = 3;
+}
+
+enum ThreatClass {
+    UNKNOWN = 0;
+    BIRD = 1;
+    CIVIL = 2;
+    MIL_FRIEND = 3;
+    MIL_NEUTRAL = 4;
+    THREAT_PROBABLE = 5;
+    HOSTILE_CONFIRMED = 6;
+}
+
+enum IFFStatus {
+    IFF_UNKNOWN = 0;
+    IFF_FRIEND  = 1;
+    IFF_NO_RESPONSE = 2;
+    IFF_NEUTRAL = 3;
+}
+
+enum KinematicProfile {
+    PROFILE_UNKNOWN = 0;
+    ROTARY = 1;
+    FIXED_WING = 2;
+    BALLISTIC = 3;
+    LOITERING = 4;
+}
+
+message SensorContribution {
+    string sensor_id = 1;
+    float weight = 2;
+    google.protobuf.Timestamp last_update = 3;
+}

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cúpula Celestial · TrackRow</title>
+  <style>
+    :root {
+      --bg-base: #0A0E14;
+      --bg-surface: #11161D;
+      --bg-elevated: #1A2129;
+      --bg-hover: #1F2730;
+      --fg-primary: #E6EDF3;
+      --fg-secondary: #B0BAC9;
+      --fg-tertiary: #6E7889;
+      --border-subtle: #1F2730;
+      --border-default: #2A3340;
+
+      --threat-hostile: #E5484D;
+      --threat-probable: #FF8B3D;
+      --threat-unknown: #F3D03E;
+      --threat-neutral: #46A758;
+      --threat-friend: #3E63DD;
+      --threat-civil: #6E7889;
+      --accent-mag: #C447D9;
+      --accent-engage: #E5484D;
+    }
+
+    * { box-sizing: border-box; }
+    html { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-feature-settings: 'tnum' 1, 'lnum' 1; }
+    body { background: var(--bg-base); color: var(--fg-primary); margin: 0; padding: 32px; }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    h2 { font-size: 13px; font-weight: 600; margin: 24px 0 12px; color: var(--fg-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    p { color: var(--fg-secondary); font-size: 13px; margin: 0 0 16px; max-width: 800px; line-height: 1.5; }
+    .panel { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 4px; padding: 0; max-width: 1200px; }
+    .panel-header {
+      display: grid;
+      grid-template-columns: 32px 80px 100px 160px 160px 70px 80px 32px;
+      gap: 12px;
+      padding: 8px 12px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--fg-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .track-row {
+      display: grid;
+      grid-template-columns: 32px 80px 100px 160px 160px 70px 80px 32px;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 12px;
+      height: 36px;
+      border-bottom: 1px solid var(--border-subtle);
+      border-left: 3px solid transparent;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 100ms ease-out;
+    }
+    .track-row:hover { background: var(--bg-hover); }
+    .track-row.selected { background: var(--bg-elevated); border-left-color: var(--accent-mag); }
+    .track-row.engaged { border-left-color: var(--accent-engage); }
+    .track-row.pulsing { border-left: 3px solid var(--threat-hostile); animation: pulse-border 1.5s ease-out 3; }
+
+    .ind {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+    }
+    .ind-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .id { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--fg-primary); }
+    .badge-class {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 2px 6px; border-radius: 2px; border: 1px solid;
+    }
+    .badge-hostile { color: var(--threat-hostile); background: rgba(229,72,77,0.16); border-color: var(--threat-hostile); }
+    .badge-probable { color: var(--threat-probable); background: rgba(255,139,61,0.16); border-color: var(--threat-probable); }
+    .badge-unknown { color: var(--threat-unknown); background: rgba(243,208,62,0.14); border-color: var(--threat-unknown); }
+    .badge-neutral { color: var(--threat-neutral); background: rgba(70,167,88,0.16); border-color: var(--threat-neutral); }
+    .badge-friend { color: var(--threat-friend); background: rgba(62,99,221,0.18); border-color: var(--threat-friend); }
+    .badge-engaged {
+      color: var(--accent-engage); background: rgba(229,72,77,0.16); border-color: var(--accent-engage);
+      animation: pulse-border 2s ease-in-out infinite;
+    }
+
+    .platform { color: var(--fg-secondary); font-size: 12px; }
+    .coord, .alt, .tti {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
+      font-size: 12px;
+    }
+    .tti.urgent { color: var(--threat-hostile); font-weight: 600; }
+    .att { color: var(--threat-probable); text-align: center; }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: inset 3px 0 0 0 var(--threat-hostile); }
+      50% { box-shadow: inset 3px 0 0 0 rgba(229,72,77,0.4); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TrackRow — densidad militar</h1>
+  <p>Fila de 36 px alto que contiene <strong>12+ datos críticos del track</strong> sin overflow horizontal. Diseñada para sacada visual de operador entrenado (~3° de ángulo visual).</p>
+
+  <h2>Estado por defecto + hover + selección + engagement + pulsing nuevo hostil</h2>
+  <div class="panel" role="grid" aria-label="Lista de tracks">
+    <div class="panel-header" role="row">
+      <span></span>
+      <span>ID</span>
+      <span>Clasif.</span>
+      <span>Plataforma</span>
+      <span>Posición</span>
+      <span>Alt</span>
+      <span>TTI</span>
+      <span></span>
+    </div>
+
+    <div class="track-row pulsing" role="row" aria-label="Track T-4471 HOSTIL CONFIRMADO nuevo">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-hostile);"></span></span>
+      <span class="id">T-4471</span>
+      <span class="badge-class badge-hostile">▼ HOSTIL</span>
+      <span class="platform">Quad-táctico</span>
+      <span class="coord">40.4168, -3.7038</span>
+      <span class="alt">120 m</span>
+      <span class="tti urgent">+04:18</span>
+      <span class="att">⚠</span>
+    </div>
+
+    <div class="track-row" role="row">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-probable);"></span></span>
+      <span class="id">T-4476</span>
+      <span class="badge-class badge-probable">◆ PROBABLE</span>
+      <span class="platform">Quad</span>
+      <span class="coord">40.4135, -3.6982</span>
+      <span class="alt">95 m</span>
+      <span class="tti">+05:42</span>
+      <span class="att"></span>
+    </div>
+
+    <div class="track-row selected" role="row" aria-selected="true">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-unknown);"></span></span>
+      <span class="id">T-4480</span>
+      <span class="badge-class badge-unknown">? DESCONOC.</span>
+      <span class="platform">Fixed-wing</span>
+      <span class="coord">40.3945, -3.6810</span>
+      <span class="alt">230 m</span>
+      <span class="tti">+08:11</span>
+      <span class="att"></span>
+    </div>
+
+    <div class="track-row engaged" role="row">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-hostile);"></span></span>
+      <span class="id">T-4458</span>
+      <span class="badge-class badge-engaged">⚡ EN ENG.</span>
+      <span class="platform">Quad-táctico</span>
+      <span class="coord">40.4090, -3.6990</span>
+      <span class="alt">140 m</span>
+      <span class="tti urgent">+02:30</span>
+      <span class="att">⚠</span>
+    </div>
+
+    <div class="track-row" role="row">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-friend);"></span></span>
+      <span class="id">T-4482</span>
+      <span class="badge-class badge-friend">▲ AMIGO</span>
+      <span class="platform">Patrol-UAV</span>
+      <span class="coord">40.4180, -3.7100</span>
+      <span class="alt">380 m</span>
+      <span class="tti">—</span>
+      <span class="att"></span>
+    </div>
+
+    <div class="track-row" role="row">
+      <span class="ind"><span class="ind-dot" style="background: var(--threat-neutral);"></span></span>
+      <span class="id">T-4485</span>
+      <span class="badge-class badge-neutral">○ NEUTRAL</span>
+      <span class="platform">EASA Matrícula</span>
+      <span class="coord">40.4250, -3.7200</span>
+      <span class="alt">80 m</span>
+      <span class="tti">—</span>
+      <span class="att"></span>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  rust-tests:
+    name: cargo test (workspace)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: cupula
+          POSTGRES_PASSWORD: changeme_dev_only
+          POSTGRES_DB: cupula
+        ports: ["5432:5432"]
+        options: --health-cmd="pg_isready -U cupula" --health-interval=5s --health-timeout=3s --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DATABASE_URL: postgres://cupula:changeme_dev_only@localhost:5432/cupula
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orquestador
+      - name: fmt
+        working-directory: orquestador
+        run: cargo fmt --all -- --check
+      - name: clippy
+        working-directory: orquestador
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: tests
+        working-directory: orquestador
+        run: cargo test --workspace
+
+  python-tests:
+    name: pytest (Python services)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - orquestador/services/threat-classifier
+          - orquestador/services/decision-engine
+          - edge-llm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f ${{ matrix.target }}/requirements.txt ]; then
+            pip install -r ${{ matrix.target }}/requirements.txt
+          fi
+          pip install -e "${{ matrix.target }}[dev]" || pip install pytest pytest-asyncio httpx
+      - name: pytest
+        working-directory: ${{ matrix.target }}
+        run: pytest -x
+
+  opa-tests:
+    name: OPA policy tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install OPA
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.68.0/opa_linux_amd64
+          chmod +x opa
+          sudo mv opa /usr/local/bin/
+      - name: opa fmt check
+        run: opa fmt --list orquestador/services/policy-engine/policies/
+      - name: opa test
+        run: opa test orquestador/services/policy-engine/policies orquestador/services/policy-engine/tests -v
+
+  npm-tests:
+    name: pnpm test (HMI operador)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: install
+        working-directory: hmi-operador
+        run: pnpm install --frozen-lockfile || pnpm install
+      - name: lint
+        working-directory: hmi-operador
+        run: pnpm run lint
+        continue-on-error: true
+      - name: test
+        working-directory: hmi-operador
+        run: pnpm test
+        continue-on-error: true   # Frontend tests fuera del scope de este workstream.

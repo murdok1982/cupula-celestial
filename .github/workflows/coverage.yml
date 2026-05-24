@@ -1,0 +1,127 @@
+name: Coverage Report
+
+on:
+  schedule:
+    # Semanal: cada lunes a las 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:  # permitir ejecución manual
+
+jobs:
+  coverage:
+    name: Coverage (${{ matrix.component }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - rust
+          - python
+          - typescript
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        if: matrix.component == 'rust'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install cargo-tarpaulin
+        if: matrix.component == 'rust'
+        run: cargo install cargo-tarpaulin
+
+      - name: Rust coverage
+        if: matrix.component == 'rust'
+        working-directory: ./orquestador
+        run: cargo tarpaulin --workspace --out Xml --output-dir coverage
+        continue-on-error: true
+
+      - name: Setup Python
+        if: matrix.component == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python deps
+        if: matrix.component == 'python'
+        working-directory: ./edge-llm
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -e . 2>/dev/null || true
+
+      - name: Python coverage
+        if: matrix.component == 'python'
+        working-directory: ./edge-llm
+        run: |
+          pytest --cov=simulador --cov=edge-llm --cov-report=xml --cov-report=term \
+            --ignore=tests/adversarial
+        continue-on-error: true
+
+      - name: Setup Node.js
+        if: matrix.component == 'typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: ./hmi-operador/pnpm-lock.yaml
+
+      - name: Install pnpm
+        if: matrix.component == 'typescript'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install TS deps
+        if: matrix.component == 'typescript'
+        working-directory: ./hmi-operador
+        run: pnpm install
+
+      - name: TypeScript coverage
+        if: matrix.component == 'typescript'
+        working-directory: ./hmi-operador
+        run: pnpm vitest run --coverage --reporter=verbose
+        continue-on-error: true
+
+  aggregate:
+    name: Aggregate Coverage Report
+    needs: [coverage]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Upload combined coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-coverage
+          path: |
+            **/coverage.xml
+            **/cobertura.xml
+
+      - name: Coverage Summary
+        run: |
+          echo "## Coverage Report Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f orquestador/coverage/cobertura.xml ]; then
+            RUST_COV=$(grep -oP 'line-rate="\K[^"]+' orquestador/coverage/cobertura.xml | head -1)
+            RUST_PCT=$(echo "$RUST_COV * 100" | bc -l | xargs printf "%.1f")
+            echo "- **Rust:** $RUST_PCT%" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f edge-llm/coverage.xml ]; then
+            PY_COV=$(grep -oP 'line-rate="\K[^"]+' edge-llm/coverage.xml | head -1)
+            PY_PCT=$(echo "$PY_COV * 100" | bc -l | xargs printf "%.1f")
+            echo "- **Python:** $PY_PCT%" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f hmi-operador/coverage/cobertura-coverage.xml ]; then
+            TS_COV=$(grep -oP 'line-rate="\K[^"]+' hmi-operador/coverage/cobertura-coverage.xml | head -1)
+            TS_PCT=$(echo "$TS_COV * 100" | bc -l | xargs printf "%.1f")
+            echo "- **TypeScript:** $TS_PCT%" >> $GITHUB_STEP_SUMMARY
+          fi

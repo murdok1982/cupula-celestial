@@ -1,0 +1,72 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Login attempts (success/fail)",
+      "id": 1,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (result) (rate(cupula_login_attempts_total[5m]))",
+          "legendFormat": "{{result}}"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Engagement authorizations",
+      "id": 2,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (result) (rate(cupula_engagement_authorize_total[5m]))",
+          "legendFormat": "{{result}}"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Audit events / batches",
+      "id": 3,
+      "datasource": "Prometheus",
+      "targets": [
+        {"expr": "cupula_audit_events_total", "legendFormat": "events"},
+        {"expr": "cupula_audit_batches_total", "legendFormat": "batches"}
+      ],
+      "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "WebAuthn outcomes",
+      "id": 4,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(cupula_webauthn_outcomes_total[1m])",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+    },
+    {
+      "type": "timeseries",
+      "title": "JWT blacklist hits",
+      "id": 5,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(cupula_jwt_blacklist_hits_total[1m])",
+          "legendFormat": "blacklisted"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+    }
+  ],
+  "schemaVersion": 39,
+  "title": "Cúpula Celestial — Overview",
+  "version": 1
+}

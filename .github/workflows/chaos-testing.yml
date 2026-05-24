@@ -1,0 +1,194 @@
+name: chaos-testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      battery:
+        description: "Battery of experiments to run"
+        type: choice
+        options:
+          - completa
+          - rapida
+          - custom
+        default: completa
+      environment:
+        description: "Target environment"
+        type: choice
+        options:
+          - staging
+          - prod
+        default: staging
+      experiment:
+        description: "Single experiment type (custom only)"
+        type: string
+        default: ""
+
+  schedule:
+    - cron: "0 6 * * 0"  # Sundays 06:00 UTC
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  COMPOSE_PROJECT_NAME: cupula-celestial
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  chaos-run:
+    name: Chaos Engineering — ${{ inputs.battery || 'completa' }}
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'anomalyco' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml docker httpx structlog
+
+      - name: Generate mTLS certs (dev)
+        working-directory: orquestador
+        run: |
+          if [ ! -d mtls/certs ]; then
+            mkdir -p mtls/certs mtls/CA
+            echo "using dev certs stub"
+          fi
+
+      - name: Deploy stack
+        working-directory: orquestador
+        run: |
+          docker compose up -d --build --wait 2>&1
+
+      - name: Healthcheck wait
+        run: |
+          echo "Waiting for services to be healthy..."
+          for i in $(seq 1 60); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health 2>/dev/null || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "All services healthy after ${i}s"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Seed test data
+        run: |
+          echo "Seeding test data..."
+          python -c "
+          import httpx, json, time
+          payload = {
+            'track': {
+              'track_id': 'T-CI-001', 'classification': 'HOSTILE',
+              'confidence': 0.92, 'latitude': 40.42, 'longitude': -3.70,
+              'altitude_agl_m': 300.0, 'speed_mps': 60.0,
+              'tti_seconds': 25.0, 'iff_status': 'UNKNOWN'
+            },
+            'context': {
+              'alert_level': 'RED', 'civilians_within_500m': False,
+              'in_protected_zone': False,
+              'available_interceptors': ['I-01', 'I-02']
+            }
+          }
+          for attempt in range(5):
+            try:
+              r = httpx.post('http://localhost:8002/v1/recommend',
+                             json=payload, timeout=10.0)
+              if r.status_code == 200:
+                print('Seed OK:', r.json().get('recommendation'))
+                break
+            except Exception as e:
+              print(f'Attempt {attempt}: {e}')
+              time.sleep(3)
+          "
+
+      - name: Configure chaos battery
+        id: battery
+        run: |
+          CONFIG="orquestador/chaos/config.yaml"
+          if [ "${{ inputs.battery }}" = "rapida" ]; then
+            cat > /tmp/chaos_rapida.yaml << 'YAML'
+          battery:
+            name: "CI - Rapida"
+            experiments:
+              - type: kill_service
+                service: redpanda
+                duration: 15
+                description: "Redpanda caido - degradacion rapida"
+              - type: kill_service
+                service: postgres
+                duration: 10
+                description: "Postgres caido - Redis cache"
+          YAML
+            CONFIG="/tmp/chaos_rapida.yaml"
+          elif [ "${{ inputs.battery }}" = "custom" ] && [ -n "${{ inputs.experiment }}" ]; then
+            cat > /tmp/chaos_custom.yaml << 'YAML'
+          battery:
+            name: "CI - Custom"
+            experiments:
+              - type: ${{ inputs.experiment }}
+                service: ${{ inputs.experiment == 'kill_service' && 'decision-engine' || 'track-fusion' }}
+                duration: 20
+                description: "Custom experiment: ${{ inputs.experiment }}"
+          YAML
+            CONFIG="/tmp/chaos_custom.yaml"
+          fi
+          echo "config=$CONFIG" >> $GITHUB_OUTPUT
+
+      - name: Run chaos experiments
+        working-directory: orquestador
+        run: |
+          python -m chaos.runner \
+            --config "${{ steps.battery.outputs.config }}" \
+            --strategy sequential \
+            --output "${{ runner.temp }}/chaos-report" \
+            --prometheus "http://localhost:9090" \
+            || echo "CHAOS_EXIT_CODE=$?" >> $GITHUB_ENV
+
+      - name: Collect report
+        if: always()
+        run: |
+          if [ -d "${{ runner.temp }}/chaos-report" ]; then
+            cp -r "${{ runner.temp }}/chaos-report" ./chaos-report
+          fi
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-report-${{ github.run_id }}
+          path: chaos-report/
+          retention-days: 30
+
+      - name: Archive stack logs
+        if: failure()
+        working-directory: orquestador
+        run: |
+          mkdir -p ../chaos-logs
+          docker compose logs --tail=200 > ../chaos-logs/stack.log 2>&1
+          docker compose ps > ../chaos-logs/stack-ps.log 2>&1
+
+      - name: Upload stack logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-logs-${{ github.run_id }}
+          path: chaos-logs/
+          retention-days: 14
+
+      - name: Cleanup stack
+        if: always()
+        working-directory: orquestador
+        run: docker compose down -v --remove-orphans 2>/dev/null || true
+
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        run: |
+          echo "::warning::Chaos experiments detected failures. Review the report artifact."

@@ -1,0 +1,62 @@
+name: ML Training Pipeline
+on:
+  push:
+    paths: ['edge-llm/training/**', 'data/processed/**', 'edge-llm/pyproject.toml']
+  workflow_dispatch:
+    inputs:
+      backbone:
+        description: 'Backbone model'
+        default: 'dinov2_s'
+        options: ['resnet18', 'dinov2_s', 'dinov2_b']
+      epochs:
+        description: 'Training epochs'
+        default: '30'
+      lora_r:
+        description: 'LoRA rank (0=full fine-tune)'
+        default: '8'
+
+jobs:
+  train:
+    runs-on: [self-hosted, gpu]
+    if: false  # Deshabilitado para runners estándar; activar con self-hosted GPU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Pull DVC data
+        run: |
+          pip install dvc[s3]
+          dvc pull
+      - name: Train model
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          pip install -e edge-llm[torch]
+          python edge-llm/training/train_classifier.py \
+            --data-dir data/processed \
+            --backbone ${{ github.event.inputs.backbone || 'dinov2_s' }} \
+            --epochs ${{ github.event.inputs.epochs || '30' }} \
+            --lora-r ${{ github.event.inputs.lora_r || '8' }} \
+            --mlflow-tracking-uri $MLFLOW_TRACKING_URI \
+            --mlflow-experiment cupula-celestial
+      - name: Register model in MLflow
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: |
+          pip install mlflow
+          mlflow models:register \
+            --model-uri runs:/$RUN_ID/model \
+            --name cupula-classifier-${{ github.event.inputs.backbone || 'dinov2_s' }}
+      - name: Push model to DVC
+        env:
+          BACKBONE: ${{ github.event.inputs.backbone || 'dinov2_s' }}
+          EPOCHS: ${{ github.event.inputs.epochs || '30' }}
+        run: |
+          dvc add models/
+          git config user.name "ML Pipeline"
+          git config user.email "ml-pipeline@cupula.local"
+          git add models.dvc
+          git commit -m "chore(ml): modelo ${{ env.BACKBONE }} epoch ${{ env.EPOCHS }} [skip ci]"
+          git push

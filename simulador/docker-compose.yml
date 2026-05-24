@@ -1,0 +1,69 @@
+name: cupula-simulator
+
+services:
+  sensor-simulator:
+    build:
+      context: ./sensor-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-sensor-simulator
+    environment:
+      SENSOR_INGEST_URL: ${SENSOR_INGEST_URL:-http://host.docker.internal:9000}
+      SCENARIO: ${SCENARIO:-single}
+      DURATION_S: ${DURATION_S:-60}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - default
+
+  drone-simulator:
+    build:
+      context: ./drone-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-drone-simulator
+    environment:
+      MAVLINK_BIND: 0.0.0.0:14550
+      DRONE_COUNT: ${DRONE_COUNT:-6}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "14550:14550/udp"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - default
+
+  test-runner:
+    build:
+      context: ./sensor-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-test-runner
+    entrypoint: ["python", "-m", "pytest", "-v", "tests/"]
+    volumes:
+      - ./tests:/app/tests
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RUN_INTEGRATION: "0"
+    profiles:
+      - coverage
+
+  benchmark:
+    build:
+      context: ./sensor-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-benchmark
+    entrypoint: ["python", "-m", "app.main", "--scenario", "saturation", "--log-level", "DEBUG"]
+    environment:
+      SENSOR_INGEST_URL: ${SENSOR_INGEST_URL:-http://host.docker.internal:9000}
+      LOG_LEVEL: DEBUG
+    profiles:
+      - benchmark

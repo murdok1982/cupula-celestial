@@ -1,0 +1,73 @@
+{
+    "_comment": "COORDENADAS FICTICIAS — sustituir por catálogo real desde OPA bundle firmado en producción (H-ALT-010 OPSEC).",
+    "_warning": "Estas coordenadas son offsets sobre Null Island (0,0) para PoC. NO usar en operación real.",
+    "geofences": {
+        "zones": [
+            {
+                "name": "EJEMPLO_HOSPITAL_A",
+                "fence_type": "HOSPITAL",
+                "active": true,
+                "bbox": {
+                    "min_lat": 0.0010,
+                    "max_lat": 0.0050,
+                    "min_lon": 0.0010,
+                    "max_lon": 0.0060
+                },
+                "altitude_min_m": 0,
+                "altitude_max_m": 500
+            },
+            {
+                "name": "EJEMPLO_EMBAJADA_B",
+                "fence_type": "EMBASSY",
+                "active": true,
+                "bbox": {
+                    "min_lat": 0.0080,
+                    "max_lat": 0.0110,
+                    "min_lon": 0.0080,
+                    "max_lon": 0.0110
+                },
+                "altitude_min_m": 0,
+                "altitude_max_m": 300
+            },
+            {
+                "name": "EJEMPLO_COLEGIO_C",
+                "fence_type": "SCHOOL",
+                "active": true,
+                "bbox": {
+                    "min_lat": 0.0150,
+                    "max_lat": 0.0175,
+                    "min_lon": 0.0150,
+                    "max_lon": 0.0180
+                },
+                "altitude_min_m": 0,
+                "altitude_max_m": 200
+            },
+            {
+                "name": "EJEMPLO_BASE_NAVAL_D",
+                "fence_type": "CRITICAL_INFRA",
+                "active": true,
+                "bbox": {
+                    "min_lat": 0.0200,
+                    "max_lat": 0.0380,
+                    "min_lon": 0.0200,
+                    "max_lon": 0.0440
+                },
+                "altitude_min_m": 0,
+                "altitude_max_m": 2000
+            },
+            {
+                "name": "EJEMPLO_REFINERIA_E",
+                "fence_type": "CRITICAL_INFRA",
+                "active": true,
+                "bbox": {
+                    "min_lat": 0.0400,
+                    "max_lat": 0.0550,
+                    "min_lon": 0.0400,
+                    "max_lon": 0.0600
+                },
+                "altitude_min_m": 0,
+                "altitude_max_m": 1500
+            }
+        ]
+    }
+}

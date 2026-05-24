@@ -1,0 +1,46 @@
+syntax = "proto3";
+package cupula.sensors.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Sensor genérico: cualquier detección que llega de capa 1/2.
+message SensorReading {
+    string  sensor_id    = 1;
+    SensorType sensor_type = 2;
+    google.protobuf.Timestamp timestamp = 3;
+    Position position    = 4;
+    Detection detection  = 5;
+    double  snr_db       = 6;
+    double  quality      = 7;          // 0..1
+}
+
+enum SensorType {
+    SENSOR_TYPE_UNSPECIFIED = 0;
+    RADAR_AESA   = 1;
+    RADAR_PASSIVE = 2;
+    RF_SPECTRUM  = 3;
+    EO_IR        = 4;
+    ACOUSTIC     = 5;
+    LIDAR        = 6;
+    SAT_EO_SAR   = 7;
+    ADSB         = 8;
+    REMOTE_ID    = 9;
+}
+
+message Position {
+    double latitude   = 1;            // WGS84
+    double longitude  = 2;
+    double altitude_m = 3;            // MSL
+    double altitude_agl_m = 4;
+}
+
+message Detection {
+    double  range_m         = 1;
+    double  azimuth_deg     = 2;
+    double  elevation_deg   = 3;
+    double  doppler_mps     = 4;
+    double  rcs_dbsm        = 5;
+    string  spectrum_signature = 6;   // huella RF si aplica
+    double  micro_doppler_period_ms = 7;
+    repeated double feature_vector  = 8;  // embedding crudo si lo aporta el nodo
+}

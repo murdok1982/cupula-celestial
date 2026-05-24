@@ -1,0 +1,117 @@
+name: security-audit
+
+on:
+  pull_request:
+    paths:
+      - "orquestador/**"
+      - "edge-llm/**"
+      - "hmi-operador/**"
+      - ".github/workflows/security-audit.yml"
+  push:
+    branches: [main, master]
+  schedule:
+    # Audit semanal contra advisories nuevos
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-audit:
+    name: cargo-audit + cargo-deny (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orquestador
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: cargo-audit
+        working-directory: orquestador
+        run: cargo audit --deny warnings
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: cargo-deny
+        working-directory: orquestador
+        run: cargo deny --all-features check
+
+  pip-audit:
+    name: pip-audit + safety (Python)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - orquestador/services/threat-classifier
+          - orquestador/services/decision-engine
+          - edge-llm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install audit tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit safety
+      - name: pip-audit ${{ matrix.target }}
+        run: |
+          if [ -f ${{ matrix.target }}/requirements.txt ]; then
+            pip-audit -r ${{ matrix.target }}/requirements.txt --strict
+          elif [ -f ${{ matrix.target }}/pyproject.toml ]; then
+            pip-audit --strict $(grep -h '^[a-zA-Z]' ${{ matrix.target }}/pyproject.toml | head -20 | sed 's/.*"\(.*\)".*/\1/')
+          fi
+      - name: safety check ${{ matrix.target }}
+        run: |
+          if [ -f ${{ matrix.target }}/requirements.txt ]; then
+            safety check -r ${{ matrix.target }}/requirements.txt --short-report
+          fi
+        continue-on-error: true   # safety database puede tener rate-limit en el free tier
+
+  npm-audit:
+    name: npm audit (HMI operador)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install
+        working-directory: hmi-operador
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: npm audit
+        working-directory: hmi-operador
+        run: npm audit --audit-level=high
+
+  dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "cupula-celestial"
+          path: "."
+          format: "HTML"
+          out: "reports"
+          args: --failOnCVSS 7
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+
+  gitleaks:
+    name: gitleaks (secrets scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

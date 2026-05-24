@@ -1,0 +1,33 @@
+# DVC ignore — similar al .gitignore para archivos trackeados por DVC
+# Los patrones aquí NO son trackeados por DVC (pero sí por git si aplica)
+
+# Caches locales y temporales
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+
+# Entornos virtuales (nunca trackear con DVC)
+.venv/
+venv/
+.conda/
+
+# Sistema
+.DS_Store
+Thumbs.db
+.desktop.ini
+
+# Grandes artefactos de build (no versionar con DVC)
+target/
+build/
+dist/
+*.egg-info/
+
+# Logs (demasiado volátiles)
+*.log
+logs/
+
+# Docker
+.docker/
+docker-compose*.override.yml

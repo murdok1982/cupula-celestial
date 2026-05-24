@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   Reset minimalista. Tema tactico oscuro por defecto.
+   ================================================================ */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #0a0e14;
+    color: #e6edf3;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  *:focus {
+    outline: none;
+  }
+
+  /* Anti-pattern de la mayor parte de los sistemas tacticos: el foco debe ser
+     SIEMPRE visible. WCAG 2.4.7. */
+  *:focus-visible {
+    outline: 2px solid #00d4ff;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: rgba(0, 212, 255, 0.35);
+    color: #ffffff;
+  }
+
+  /* Scrollbar tactico */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1a2332;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3d4a66;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a5878;
+  }
+}
+
+/* ================================================================
+   Modos especiales de pantalla
+   ================================================================ */
+@layer utilities {
+  /* Vision nocturna: filtro rojo monocromo, preserva legibilidad de combate */
+  .night-mode {
+    filter: sepia(1) hue-rotate(-50deg) saturate(2.5) brightness(0.85);
+  }
+
+  /* Daltonico: deuteranopia-friendly. Hostiles -> magenta, neutrales -> azul */
+  .colorblind-mode {
+    --threat-hostile-cb: #d81b60;
+    --threat-friend-cb: #1e88e5;
+  }
+  .colorblind-mode [data-classification='HOSTIL_CONFIRMADO'],
+  .colorblind-mode [data-classification='AMENAZA_PROBABLE'] {
+    color: var(--threat-hostile-cb) !important;
+  }
+}
+
+/* Cesium ajustes */
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar {
+  display: none !important;
+}
+.cesium-widget-credits {
+  display: none !important;
+}
+.cesium-viewer {
+  background-color: #0a0e14 !important;
+}

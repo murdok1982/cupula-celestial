@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://cupula.defensa.gob.es/schemas/recommendation.schema.json",
+    "title": "EngagementRecommendation",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "track_id",
+        "recommendation",
+        "interceptors_proposed",
+        "engagement_window",
+        "pk_estimated",
+        "collateral_risk",
+        "rationale",
+        "operator_action_required",
+        "authorization_level"
+    ],
+    "properties": {
+        "track_id": { "type": "string", "pattern": "^T-[0-9A-Za-z_-]{1,32}$" },
+        "recommendation": { "type": "string", "enum": ["OBSERVE", "TRACK", "WARN", "ENGAGE", "ABORT"] },
+        "interceptors_proposed": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^I-[0-9A-Za-z_-]{1,32}$" },
+            "maxItems": 16
+        },
+        "engagement_window": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start_ms", "end_ms"],
+            "properties": {
+                "start_ms": { "type": "integer", "minimum": 0 },
+                "end_ms":   { "type": "integer", "minimum": 0 }
+            }
+        },
+        "pk_estimated": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "collateral_risk": { "type": "string", "enum": ["NEGLIGIBLE", "LOW", "MEDIUM", "HIGH"] },
+        "rationale": { "type": "string", "minLength": 10, "maxLength": 1024 },
+        "operator_action_required": { "type": "boolean" },
+        "authorization_level": { "type": "string", "enum": ["OPS-OFFICER", "CO", "JOINT-CO"] },
+        "roe_version": { "type": "string" },
+        "policies_consulted": { "type": "array", "items": { "type": "string" } },
+        "llm_model": { "type": "string" }
+    }
+}

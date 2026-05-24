@@ -1,0 +1,91 @@
+# ===========================================================================
+# SPIRE — SPIFFE identity federation para Cúpula Celestial.
+#
+# Topología:
+#   spire-server      → Autoridad SPIFFE (emite SVIDs)
+#   spire-agent-hmi   → Agente para hmi-gateway
+#   spire-agent-swarm → Agente para swarm-controller
+#
+# En producción: un agente por host/nodo, no por contenedor.
+# ===========================================================================
+
+name: cupula-spire
+
+networks:
+  cupula:
+    external: true
+
+volumes:
+  spire-data:
+  spire-agent-hmi-data:
+  spire-agent-swarm-data:
+
+services:
+
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.10.1
+    container_name: cupula-spire-server
+    command:
+      - run
+      - -config
+      - /run/spire/server.conf
+    volumes:
+      - ./server.conf:/run/spire/server.conf:ro
+      - spire-data:/var/lib/spire
+      - ./../mtls/certs/ca.crt:/run/spire/ca.crt:ro
+    ports:
+      - "8081:8081"   # SPIRE API (dev only)
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ["CMD-SHELL", "spire-server healthcheck --socket-path /var/lib/spire/spire-server.sock || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spire-agent-hmi:
+    image: ghcr.io/spiffe/spire-agent:1.10.1
+    container_name: cupula-spire-agent-hmi
+    command:
+      - run
+      - -config
+      - /run/spire/agent.conf
+    volumes:
+      - ./agent.conf:/run/spire/agent.conf:ro
+      - spire-agent-hmi-data:/var/lib/spire
+      - ./../mtls/certs:/run/spire/certs:ro
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      spire-server: { condition: service_healthy }
+
+  spire-agent-swarm:
+    image: ghcr.io/spiffe/spire-agent:1.10.1
+    container_name: cupula-spire-agent-swarm
+    command:
+      - run
+      - -config
+      - /run/spire/agent.conf
+    volumes:
+      - ./agent.conf:/run/spire/agent.conf:ro
+      - spire-agent-swarm-data:/var/lib/spire
+      - ./../mtls/certs:/run/spire/certs:ro
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      spire-server: { condition: service_healthy }

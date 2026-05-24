@@ -1,0 +1,23 @@
+# OpenSSL config: CA root para mTLS interno Cúpula Celestial (DEV/PoC).
+# En producción: HSM-backed CA gestionada por step-ca / Vault / SPIRE.
+
+[ req ]
+default_bits        = 4096
+default_md          = sha384
+distinguished_name  = req_distinguished_name
+x509_extensions     = v3_ca
+prompt              = no
+encrypt_key         = no
+
+[ req_distinguished_name ]
+C   = ES
+ST  = Madrid
+O   = Cupula Celestial PoC
+OU  = Cybersecurity
+CN  = Cupula Celestial Internal Root CA (DEV)
+
+[ v3_ca ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical, CA:TRUE, pathlen:1
+keyUsage               = critical, digitalSignature, cRLSign, keyCertSign

@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "tracks": "Tracks",
+    "engagements": "Engagements",
+    "interceptors": "Interceptors",
+    "audit": "Audit",
+    "simulator": "Simulator",
+    "settings": "Settings"
+  },
+  "login": {
+    "title": "Operator Sign-in",
+    "subtitle": "Celestial Dome - C2 HMI",
+    "username": "User ID",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Validating...",
+    "forgot": "Recovery only in-person via S2",
+    "error": "Invalid credentials or system unavailable",
+    "mfaTitle": "Second factor authentication",
+    "mfaSubtitle": "Insert the FIDO2 token issued by DIGENECO"
+  },
+  "dashboard": {
+    "tracksTitle": "Confirmed tracks",
+    "recommendationTitle": "Active recommendation",
+    "noTracks": "No active tracks. System in surveillance mode.",
+    "noRecommendations": "No active recommendations."
+  },
+  "actions": {
+    "authorize": "Authorize",
+    "reject": "Reject",
+    "defer": "Defer",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "audit": {
+    "title": "Audit log",
+    "verifyChain": "Verify chain",
+    "chainOk": "Merkle chain integrity OK",
+    "chainBroken": "Chain broken at seq {{seq}}",
+    "exportEvidence": "Export STANAG evidence"
+  },
+  "settings": {
+    "title": "Operator settings",
+    "displayMode": "Display mode",
+    "tactical": "Tactical (dark)",
+    "night": "Night vision (red)",
+    "colorblind": "Colorblind",
+    "fontScale": "Font size",
+    "audioAlerts": "Audio alerts",
+    "language": "Language"
+  },
+  "common": {
+    "loading": "Loading...",
+    "offline": "Offline",
+    "retry": "Retry"
+  }
+}

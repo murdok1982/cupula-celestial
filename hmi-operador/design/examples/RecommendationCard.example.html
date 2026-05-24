@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cúpula Celestial · RecommendationCard</title>
+  <style>
+    :root {
+      --bg-base: #0A0E14;
+      --bg-surface: #11161D;
+      --bg-elevated: #1A2129;
+      --bg-hover: #1F2730;
+      --fg-primary: #E6EDF3;
+      --fg-secondary: #B0BAC9;
+      --fg-tertiary: #6E7889;
+      --border-default: #2A3340;
+      --border-strong: #3D4A5C;
+      --accent-primary: #4D7BD8;
+      --accent-engage: #E5484D;
+      --accent-engage-hover: #F05A60;
+      --threat-hostile: #E5484D;
+      --threat-hostile-bg: rgba(229, 72, 77, 0.16);
+      --status-success: #2BA968;
+      --status-warning: #E8A800;
+    }
+    * { box-sizing: border-box; }
+    html { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-feature-settings: 'tnum' 1, 'lnum' 1; }
+    body { background: var(--bg-base); color: var(--fg-primary); margin: 0; padding: 32px; }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    p  { color: var(--fg-secondary); font-size: 13px; margin: 0 0 24px; max-width: 700px; line-height: 1.5; }
+
+    .card {
+      width: 360px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-left: 4px solid var(--accent-engage);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-default);
+      background: var(--bg-elevated);
+      font-size: 11px; font-weight: 600; color: var(--fg-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .card-header .id { font-family: 'JetBrains Mono', monospace; color: var(--fg-primary); }
+    .card-body { padding: 16px; }
+    .recommendation-action {
+      font-size: 24px; font-weight: 700; color: var(--accent-engage);
+      letter-spacing: -0.015em;
+      margin: 0 0 16px;
+    }
+    .label {
+      font-size: 11px; font-weight: 500; color: var(--fg-tertiary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin: 12px 0 4px;
+    }
+    .value-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--fg-primary);
+    }
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+    .kpi {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 8px 12px;
+    }
+    .kpi-label { font-size: 11px; color: var(--fg-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--fg-primary); margin-top: 2px; }
+    .kpi-value.risk-low { color: var(--status-success); }
+    .rationale {
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--fg-primary);
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+    .meta {
+      font-size: 12px; color: var(--fg-secondary);
+      margin-top: 12px;
+    }
+    .card-footer {
+      display: flex; gap: 8px; padding: 12px 16px;
+      border-top: 1px solid var(--border-default);
+    }
+    .btn {
+      flex: 1;
+      height: 40px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 150ms ease-out, box-shadow 150ms ease-out, transform 80ms ease-out;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 1px solid transparent;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border-strong);
+      color: var(--fg-secondary);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--fg-primary); }
+    .btn-engage {
+      background: var(--accent-engage);
+      color: #FFF;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .btn-engage:hover {
+      background: var(--accent-engage-hover);
+      box-shadow: 0 0 0 2px rgba(229,72,77,0.45), 0 0 16px rgba(229,72,77,0.35);
+    }
+    .btn-engage:focus-visible {
+      outline: 2px solid #FFF;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>RecommendationCard — output del LLM táctico</h1>
+  <p>Card que muestra la recomendación del LLM (Llama-3.1-8B fine-tuned con doctrina española/OTAN). Diseño prioriza visualmente la <strong>acción</strong> (text-2xl) y los KPI críticos <strong>Pk + riesgo colateral</strong>. La justificación se muestra sin truncar porque la trazabilidad del razonamiento es obligatoria por DIH.</p>
+
+  <div class="card" role="article" aria-labelledby="rec-title">
+    <div class="card-header">
+      <span id="rec-title">Recomendación táctica</span>
+      <span class="id">T-4471</span>
+    </div>
+    <div class="card-body">
+      <div class="recommendation-action">ENGAGE</div>
+
+      <div class="label">Interceptores propuestos</div>
+      <div class="value-mono">I-12, I-19</div>
+
+      <div class="label">Ventana de engagement</div>
+      <div class="value-mono">0 ms — 4 200 ms</div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Pk combinada</div>
+          <div class="kpi-value">89.0 %</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Riesgo colateral</div>
+          <div class="kpi-value risk-low">BAJO</div>
+        </div>
+      </div>
+
+      <div class="label">Justificación del LLM</div>
+      <div class="rationale">
+        Trayectoria balística hacia activo crítico C-3 (puerto comercial, sector S-4). Sin amigos en línea de fuego. ROE-7 permite engagement automático en ventana de 4.2 s. Pk combinada sobre Pk individual por solapamiento de vectores cinéticos. Riesgo colateral BAJO: zona de impacto sobre lámina de agua portuaria sin tráfico civil registrado.
+      </div>
+
+      <div class="meta">
+        ROE aplicable: <strong>ROE-7</strong> · Autorización requerida: <strong>OPS-OFFICER</strong>
+      </div>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-ghost" type="button">Rechazar</button>
+      <button class="btn btn-engage" type="button" aria-label="Autorizar engagement contra T-4471">→ AUTORIZAR</button>
+    </div>
+  </div>
+
+</body>
+</html>

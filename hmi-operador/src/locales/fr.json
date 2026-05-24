@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "dashboard": "Tableau",
+    "tracks": "Pistes",
+    "engagements": "Engagements",
+    "interceptors": "Intercepteurs",
+    "audit": "Audit",
+    "simulator": "Simulateur",
+    "settings": "Parametres"
+  },
+  "login": {
+    "title": "Connexion Operateur",
+    "subtitle": "Dome Celeste - HMI C2",
+    "username": "Identifiant",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Validation...",
+    "forgot": "Recuperation uniquement en presentiel via S2",
+    "error": "Identifiants invalides ou systeme indisponible",
+    "mfaTitle": "Authentification second facteur",
+    "mfaSubtitle": "Inserez le jeton FIDO2 emis par DIGENECO"
+  },
+  "dashboard": {
+    "tracksTitle": "Pistes confirmees",
+    "recommendationTitle": "Recommandation active",
+    "noTracks": "Aucune piste active. Systeme en surveillance.",
+    "noRecommendations": "Aucune recommandation active."
+  },
+  "actions": {
+    "authorize": "Autoriser",
+    "reject": "Rejeter",
+    "defer": "Differer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "audit": {
+    "title": "Journal d'audit",
+    "verifyChain": "Verifier la chaine",
+    "chainOk": "Chaine Merkle integre",
+    "chainBroken": "Chaine rompue a seq {{seq}}",
+    "exportEvidence": "Exporter preuve STANAG"
+  },
+  "settings": {
+    "title": "Parametres operateur",
+    "displayMode": "Mode d'affichage",
+    "tactical": "Tactique (sombre)",
+    "night": "Vision nocturne (rouge)",
+    "colorblind": "Daltonien",
+    "fontScale": "Taille de police",
+    "audioAlerts": "Alertes audio",
+    "language": "Langue"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "offline": "Hors ligne",
+    "retry": "Reessayer"
+  }
+}

@@ -1,0 +1,46 @@
+battery:
+  name: "FASE 3 - Chaos Validation"
+  experiments:
+    - type: kill_service
+      service: redpanda
+      duration: 30
+      description: "Redpanda caido - debe degradar a logging local"
+
+    - type: kill_service
+      service: postgres
+      duration: 20
+      description: "Postgres caido - cache Redis debe sostener"
+
+    - type: network_partition
+      service: hmi-gateway
+      target: audit-log
+      duration: 15
+      description: "HMI sin audit - debe encolar localmente"
+
+    - type: latency_injection
+      service: track-fusion
+      latency_ms: 500
+      jitter_ms: 100
+      duration: 20
+      description: "Latencia en fusion - debe mantener throughput"
+
+    - type: kill_service
+      service: decision-engine
+      duration: 25
+      description: "Decision engine caido - debe usar ultima recomendacion"
+
+    - type: resource_exhaustion
+      service: threat-classifier
+      cpu_percent: 90
+      duration: 15
+      description: "CPU alta en clasificador - debe degradar a reglas"
+
+  probes_before: true
+  probes_after: true
+
+metrics:
+  prometheus: "http://prometheus:9090"
+  slo:
+    pipeline_latency_p95: 200
+    ingestion_rate: 10
+    error_rate: 0.05

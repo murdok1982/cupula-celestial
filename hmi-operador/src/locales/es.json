@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "tracks": "Pistas",
+    "engagements": "Engagements",
+    "interceptors": "Interceptores",
+    "audit": "Audit",
+    "simulator": "Simulador",
+    "settings": "Ajustes"
+  },
+  "login": {
+    "title": "Acceso de Operador",
+    "subtitle": "Cupula Celestial - HMI C2",
+    "username": "Identificador",
+    "password": "Contrasena",
+    "submit": "Acceder",
+    "submitting": "Validando...",
+    "forgot": "Recuperacion solo presencial via S2",
+    "error": "Credenciales invalidas o sistema no disponible",
+    "mfaTitle": "Autenticacion de segundo factor",
+    "mfaSubtitle": "Inserte el token FIDO2 emitido por DIGENECO"
+  },
+  "dashboard": {
+    "tracksTitle": "Pistas confirmadas",
+    "recommendationTitle": "Recomendacion activa",
+    "noTracks": "Sin pistas activas. Sistema en modo vigilancia.",
+    "noRecommendations": "Sin recomendaciones activas."
+  },
+  "actions": {
+    "authorize": "Autorizar",
+    "reject": "Rechazar",
+    "defer": "Diferir",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
+  "audit": {
+    "title": "Registro de auditoria",
+    "verifyChain": "Verificar cadena",
+    "chainOk": "Cadena Merkle integra",
+    "chainBroken": "Cadena rota en seq {{seq}}",
+    "exportEvidence": "Exportar evidencia STANAG"
+  },
+  "settings": {
+    "title": "Ajustes de operador",
+    "displayMode": "Modo de pantalla",
+    "tactical": "Tactico (oscuro)",
+    "night": "Vision nocturna (rojo)",
+    "colorblind": "Daltonico",
+    "fontScale": "Tamano de fuente",
+    "audioAlerts": "Alertas sonoras",
+    "language": "Idioma"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "offline": "Sin conexion",
+    "retry": "Reintentar"
+  }
+}

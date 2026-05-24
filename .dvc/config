@@ -1,0 +1,9 @@
+[core]
+    remote = local
+[remote "local"]
+    url = /mnt/ml-storage/dvc-cache
+[remote "s3"]
+    url = s3://cupula-celestial-ml/models
+[remote "minio"]
+    url = s3://mlflow/cupula
+    endpointurl = http://minio:9000

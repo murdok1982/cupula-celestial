@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cúpula Celestial · StatusBar</title>
+  <style>
+    :root {
+      --bg-base: #0A0E14;
+      --bg-surface: #11161D;
+      --bg-elevated: #1A2129;
+      --fg-primary: #E6EDF3;
+      --fg-secondary: #B0BAC9;
+      --fg-tertiary: #6E7889;
+      --border-default: #2A3340;
+      --status-success: #2BA968;
+      --status-warning: #E8A800;
+      --status-error: #E5484D;
+      --defcon-1: #E5484D;
+      --defcon-2: #FF8B3D;
+      --defcon-3: #E8A800;
+      --defcon-4: #A0B842;
+      --defcon-5: #46A758;
+    }
+    * { box-sizing: border-box; }
+    html { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-feature-settings: 'tnum' 1, 'lnum' 1; }
+    body {
+      background: var(--bg-base);
+      color: var(--fg-primary);
+      margin: 0;
+      padding: 32px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    p  { color: var(--fg-secondary); font-size: 13px; margin: 0 0 24px; max-width: 800px; line-height: 1.5; }
+    h2 { font-size: 13px; font-weight: 600; margin: 24px 0 12px; color: var(--fg-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* StatusBar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 16px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      font-size: 12px;
+      gap: 0;
+    }
+    .seg {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 12px;
+      height: 100%;
+      border-right: 1px solid var(--border-default);
+    }
+    .seg:last-child { border-right: none; }
+    .seg .lbl { color: var(--fg-tertiary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .seg .val { font-family: 'JetBrains Mono', monospace; color: var(--fg-primary); font-weight: 500; }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot.ok { background: var(--status-success); }
+    .dot.warn { background: var(--status-warning); animation: blink 2s ease-in-out infinite; }
+    .dot.err { background: var(--status-error); animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .badge-defcon {
+      display: inline-flex; align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: 'IBM Plex Sans Condensed', sans-serif;
+    }
+    .defcon-3 { background: rgba(232,168,0,0.14); color: var(--defcon-3); border: 1px solid var(--defcon-3); }
+    .defcon-2 { background: rgba(255,139,61,0.16); color: var(--defcon-2); border: 1px solid var(--defcon-2); }
+    .defcon-1 { background: rgba(229,72,77,0.14); color: var(--defcon-1); border: 1px solid var(--defcon-1); }
+    .defcon-5 { background: rgba(70,167,88,0.16); color: var(--defcon-5); border: 1px solid var(--defcon-5); }
+
+    .sensors-ok { color: var(--status-success); font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .sensors-warn { color: var(--status-warning); font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+    .container { background: var(--bg-base); padding: 0; border: 1px solid var(--border-default); border-radius: 4px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+  <h1>StatusBar — barra de estado siempre visible</h1>
+  <p>32 px alto. Comunica permanentemente: estado de conexión + latencia, operador autenticado, sensores activos, DEFCON, hora Zulu. Segmentos separados por bordes verticales 1 px.</p>
+
+  <h2>Estado normal (WS OK, DEFCON 3)</h2>
+  <div class="container">
+    <div class="status-bar" role="status" aria-label="Barra de estado del sistema">
+      <div class="seg">
+        <span class="dot ok" aria-hidden="true"></span>
+        <span class="val">Online</span>
+        <span class="lbl">·</span>
+        <span class="val">WS 28 ms</span>
+        <span class="lbl">·</span>
+        <span class="val">API 12 ms</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Op:</span>
+        <span class="val">J. GARCÍA</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Sensores:</span>
+        <span class="sensors-ok">4/4</span>
+      </div>
+      <div class="seg">
+        <span class="badge-defcon defcon-3">DEFCON 3 · ELEVATED</span>
+      </div>
+      <div class="seg">
+        <span class="val">14:32:18 Z</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Estado degradado (WS lento, sensor caído)</h2>
+  <div class="container">
+    <div class="status-bar">
+      <div class="seg">
+        <span class="dot warn" aria-hidden="true"></span>
+        <span class="val">Degraded</span>
+        <span class="lbl">·</span>
+        <span class="val" style="color: var(--status-warning);">WS 540 ms</span>
+        <span class="lbl">·</span>
+        <span class="val">API 12 ms</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Op:</span>
+        <span class="val">J. GARCÍA</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Sensores:</span>
+        <span class="sensors-warn">3/4</span>
+      </div>
+      <div class="seg">
+        <span class="badge-defcon defcon-3">DEFCON 3 · ELEVATED</span>
+      </div>
+      <div class="seg">
+        <span class="val">14:34:51 Z</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Estado crítico (comms loss, DEFCON 2)</h2>
+  <div class="container">
+    <div class="status-bar">
+      <div class="seg">
+        <span class="dot err" aria-hidden="true"></span>
+        <span class="val" style="color: var(--status-error);">Offline</span>
+        <span class="lbl">·</span>
+        <span class="val" style="color: var(--status-error);">WS --</span>
+        <span class="lbl">·</span>
+        <span class="val" style="color: var(--status-error);">API --</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Op:</span>
+        <span class="val">J. GARCÍA</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Sensores:</span>
+        <span class="sensors-warn">2/4</span>
+      </div>
+      <div class="seg">
+        <span class="badge-defcon defcon-2">DEFCON 2 · IMMINENT</span>
+      </div>
+      <div class="seg">
+        <span class="val">14:38:02 Z</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Estado paz (DEFCON 5)</h2>
+  <div class="container">
+    <div class="status-bar">
+      <div class="seg">
+        <span class="dot ok"></span>
+        <span class="val">Online</span>
+        <span class="lbl">·</span>
+        <span class="val">WS 18 ms</span>
+        <span class="lbl">·</span>
+        <span class="val">API 8 ms</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Op:</span>
+        <span class="val">M. RUIZ</span>
+      </div>
+      <div class="seg">
+        <span class="lbl">Sensores:</span>
+        <span class="sensors-ok">4/4</span>
+      </div>
+      <div class="seg">
+        <span class="badge-defcon defcon-5">DEFCON 5 · PEACE</span>
+      </div>
+      <div class="seg">
+        <span class="val">08:15:30 Z</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

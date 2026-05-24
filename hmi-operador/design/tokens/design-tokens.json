@@ -1,0 +1,162 @@
+{
+  "$schema": "https://schemas.amazonaws.com/styledictionary/v3",
+  "color": {
+    "bg": {
+      "base":     { "value": "#0A0E14", "comment": "Fondo aplicación, debajo del mapa Cesium. Luminancia ~3%." },
+      "surface":  { "value": "#11161D", "comment": "Paneles, sidebars, modales. ~5%." },
+      "elevated": { "value": "#1A2129", "comment": "Cards activas, filas seleccionadas. ~8%." },
+      "hover":    { "value": "#1F2730", "comment": "Estado hover sobre filas y ghost buttons." },
+      "overlay":  { "value": "rgba(10, 14, 20, 0.85)", "comment": "Backdrop de modales bloqueantes." }
+    },
+    "fg": {
+      "primary":   { "value": "#E6EDF3", "comment": "Texto principal — contraste 14.8:1 vs bg.base (AAA)." },
+      "secondary": { "value": "#B0BAC9", "comment": "Etiquetas y metadatos — 9.2:1 vs bg.base (AAA)." },
+      "tertiary":  { "value": "#6E7889", "comment": "Texto deshabilitado, timestamps secundarios — 4.8:1 (AA)." },
+      "inverse":   { "value": "#0A0E14", "comment": "Texto sobre fondos claros (primary buttons, badges saturados)." }
+    },
+    "border": {
+      "subtle":  { "value": "#1F2730", "comment": "Separadores discretos, zebrado de tabla." },
+      "default": { "value": "#2A3340", "comment": "Bordes por defecto de paneles, inputs." },
+      "strong":  { "value": "#3D4A5C", "comment": "Hover y focus de inputs, contornos enfatizados." },
+      "focus":   { "value": "#4D7BD8", "comment": "Anillo de foco accesible." }
+    },
+    "threat": {
+      "hostile":      { "value": "#E5484D", "comment": "HOSTIL_CONFIRMADO. Rojo carmín, menos saturado que rojo puro para reducir halo en OLED." },
+      "hostileBg":    { "value": "rgba(229, 72, 77, 0.16)" },
+      "probable":     { "value": "#FF8B3D", "comment": "AMENAZA_PROBABLE. Naranja separable de rojo en deuteranopia." },
+      "probableBg":   { "value": "rgba(255, 139, 61, 0.16)" },
+      "unknown":      { "value": "#F3D03E", "comment": "DESCONOCIDO. Amarillo desat." },
+      "unknownBg":    { "value": "rgba(243, 208, 62, 0.14)" },
+      "neutral":      { "value": "#46A758", "comment": "NEUTRAL. Verde lima." },
+      "neutralBg":    { "value": "rgba(70, 167, 88, 0.16)" },
+      "friend":       { "value": "#3E63DD", "comment": "MILITAR_AMIGO. Azul OTAN." },
+      "friendBg":     { "value": "rgba(62, 99, 221, 0.18)" },
+      "civil":        { "value": "#6E7889", "comment": "CIVIL. Gris azulado neutro." },
+      "civilBg":      { "value": "rgba(110, 120, 137, 0.15)" },
+      "discard":      { "value": "#4A5260", "comment": "AVE / FAUNA / descartar." },
+      "discardBg":    { "value": "rgba(74, 82, 96, 0.12)" }
+    },
+    "status": {
+      "success":   { "value": "#2BA968" },
+      "successBg": { "value": "rgba(43, 169, 104, 0.14)" },
+      "warning":   { "value": "#E8A800" },
+      "warningBg": { "value": "rgba(232, 168, 0, 0.14)" },
+      "error":     { "value": "#E5484D" },
+      "errorBg":   { "value": "rgba(229, 72, 77, 0.14)" },
+      "info":      { "value": "#4D7BD8" },
+      "infoBg":    { "value": "rgba(77, 123, 216, 0.14)" }
+    },
+    "defcon": {
+      "1": { "value": "#E5484D", "comment": "DEFCON 1 — conflicto activo." },
+      "2": { "value": "#FF8B3D", "comment": "DEFCON 2 — conflicto inminente." },
+      "3": { "value": "#E8A800", "comment": "DEFCON 3 — disposición elevada." },
+      "4": { "value": "#A0B842", "comment": "DEFCON 4 — vigilancia incrementada." },
+      "5": { "value": "#46A758", "comment": "DEFCON 5 — paz." }
+    },
+    "accent": {
+      "primary":      { "value": "#4D7BD8", "comment": "Botones primary (excepto engage)." },
+      "primaryHover": { "value": "#5D8AE8" },
+      "engage":       { "value": "#E5484D", "comment": "Botón ENGAGE (autorización letal)." },
+      "engageHover":  { "value": "#F05A60" },
+      "cyan":         { "value": "#4FB6D9", "comment": "Vectores velocidad amigos, interceptores propios." },
+      "magenta":      { "value": "#C447D9", "comment": "Track seleccionado highlight." }
+    },
+    "cesium": {
+      "terrain":         { "value": "#1B2330" },
+      "ocean":           { "value": "#08111C" },
+      "adminBorder":     { "value": "#3D4A5C" },
+      "geofenceCivil":   { "value": "#E5484D" },
+      "geofenceMilitary":{ "value": "#3E63DD" },
+      "geofenceNofly":   { "value": "#F3D03E" }
+    }
+  },
+  "font": {
+    "family": {
+      "sans":     { "value": "'Inter Tight', 'IBM Plex Sans', 'Inter', system-ui, sans-serif" },
+      "mono":     { "value": "'JetBrains Mono', 'Berkeley Mono', 'IBM Plex Mono', Consolas, monospace" },
+      "display":  { "value": "'IBM Plex Sans Condensed', 'Inter Tight', 'Arial Narrow', sans-serif" }
+    },
+    "size": {
+      "2xs": { "value": "11px", "lineHeight": "14px", "letterSpacing": "0.02em" },
+      "xs":  { "value": "12px", "lineHeight": "16px", "letterSpacing": "0.01em" },
+      "sm":  { "value": "13px", "lineHeight": "18px", "letterSpacing": "0" },
+      "base":{ "value": "14px", "lineHeight": "20px", "letterSpacing": "0" },
+      "md":  { "value": "16px", "lineHeight": "24px", "letterSpacing": "0" },
+      "lg":  { "value": "18px", "lineHeight": "26px", "letterSpacing": "-0.005em" },
+      "xl":  { "value": "20px", "lineHeight": "28px", "letterSpacing": "-0.01em" },
+      "2xl": { "value": "24px", "lineHeight": "32px", "letterSpacing": "-0.015em" },
+      "3xl": { "value": "32px", "lineHeight": "40px", "letterSpacing": "-0.02em" }
+    },
+    "weight": {
+      "regular":   { "value": "400" },
+      "medium":    { "value": "500" },
+      "semibold":  { "value": "600" },
+      "bold":      { "value": "700" },
+      "extrabold": { "value": "800" }
+    }
+  },
+  "space": {
+    "0":   { "value": "0px" },
+    "px":  { "value": "1px" },
+    "0_5": { "value": "2px" },
+    "1":   { "value": "4px" },
+    "1_5": { "value": "6px" },
+    "2":   { "value": "8px" },
+    "3":   { "value": "12px" },
+    "4":   { "value": "16px" },
+    "5":   { "value": "20px" },
+    "6":   { "value": "24px" },
+    "8":   { "value": "32px" },
+    "10":  { "value": "40px" },
+    "12":  { "value": "48px" },
+    "16":  { "value": "64px" }
+  },
+  "radius": {
+    "none": { "value": "0px" },
+    "sm":   { "value": "2px" },
+    "md":   { "value": "4px" },
+    "lg":   { "value": "6px" },
+    "full": { "value": "9999px" }
+  },
+  "shadow": {
+    "none":   { "value": "none" },
+    "panel":  { "value": "0 1px 0 0 #2A3340" },
+    "card":   { "value": "0 2px 4px rgba(0, 0, 0, 0.3)" },
+    "modal":  { "value": "0 10px 32px rgba(0, 0, 0, 0.6)" },
+    "engage": { "value": "0 0 0 2px rgba(229, 72, 77, 0.45), 0 0 16px rgba(229, 72, 77, 0.35)" },
+    "focus":  { "value": "0 0 0 2px #4D7BD8" }
+  },
+  "breakpoint": {
+    "tablet":      { "value": "1024px" },
+    "secondary":   { "value": "1280px" },
+    "workstation": { "value": "1920px" },
+    "quad":        { "value": "2560px" },
+    "4k":          { "value": "3840px" }
+  },
+  "zIndex": {
+    "base":            { "value": "0" },
+    "map":             { "value": "1" },
+    "mapOverlay":      { "value": "10" },
+    "panel":           { "value": "100" },
+    "header":          { "value": "200" },
+    "statusbar":       { "value": "200" },
+    "dropdown":        { "value": "500" },
+    "tooltip":         { "value": "800" },
+    "modalBackdrop":   { "value": "1000" },
+    "modal":           { "value": "1010" },
+    "toast":           { "value": "1100" },
+    "criticalBanner":  { "value": "1200" }
+  },
+  "duration": {
+    "fast":   { "value": "80ms" },
+    "base":   { "value": "150ms" },
+    "slow":   { "value": "200ms" },
+    "pulse":  { "value": "1500ms" },
+    "spinner":{ "value": "600ms" },
+    "camera": { "value": "800ms" }
+  },
+  "easing": {
+    "default": { "value": "cubic-bezier(0, 0, 0.2, 1)", "comment": "ease-out, recomendado por defecto." },
+    "linear":  { "value": "linear" }
+  }
+}

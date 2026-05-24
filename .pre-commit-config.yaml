@@ -1,0 +1,44 @@
+# Pre-commit hooks — Cúpula Celestial FASE 2.
+# Instalar: pip install pre-commit && pre-commit install
+# Ejecutar manual: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks — secrets scanner
+        description: Detect committed secrets (API keys, tokens, certs).
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: bash -c 'cd orquestador && cargo fmt --all -- --check'
+        language: system
+        files: 'orquestador/.*\.rs$'
+        pass_filenames: false
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: bash -c 'cd orquestador && cargo clippy --workspace --all-targets -- -D warnings'
+        language: system
+        files: 'orquestador/.*\.rs$'
+        pass_filenames: false
+        stages: [pre-push]

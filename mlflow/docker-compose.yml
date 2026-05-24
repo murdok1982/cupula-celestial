@@ -1,0 +1,34 @@
+services:
+  mlflow-server:
+    image: ghcr.io/mlflow/mlflow:v2.16.0
+    ports: ["5000:5000"]
+    environment:
+      MLFLOW_TRACKING_URI: postgresql://mlflow:mlflow@mlflow-db:5432/mlflow
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    command: mlflow server --backend-store-uri postgresql://mlflow:mlflow@mlflow-db:5432/mlflow --default-artifact-root s3://mlflow/cupula/ --host 0.0.0.0
+    depends_on: [mlflow-db, minio]
+    networks: [cupula-ml]
+
+  mlflow-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    volumes: [mlflow-db-data:/var/lib/postgresql/data]
+    networks: [cupula-ml]
+
+  minio:
+    image: minio/minio:latest
+    ports: ["9000:9000", "9001:9001"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes: [minio-data:/data]
+    networks: [cupula-ml]
+
+volumes: { mlflow-db-data:, minio-data: }
+networks: { cupula-ml: }

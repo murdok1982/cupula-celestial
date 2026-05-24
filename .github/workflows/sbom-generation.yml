@@ -1,0 +1,102 @@
+name: sbom-generation
+
+on:
+  push:
+    branches: [main, master]
+  release:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sbom-rust:
+    name: SBOM CycloneDX — Rust workspace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: orquestador
+      - name: install cargo-cyclonedx
+        run: cargo install cargo-cyclonedx --locked
+      - name: generate SBOM
+        working-directory: orquestador
+        run: cargo cyclonedx --format json --all
+      - name: collect
+        run: |
+          mkdir -p sbom-out
+          find orquestador -name "*.cdx.json" -exec cp {} sbom-out/ \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-rust
+          path: sbom-out/
+
+  sbom-python:
+    name: SBOM CycloneDX — Python services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - orquestador/services/threat-classifier
+          - orquestador/services/decision-engine
+          - edge-llm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install cyclonedx-py
+        run: pip install cyclonedx-bom
+      - name: generate SBOM
+        run: |
+          mkdir -p sbom-out
+          NAME=$(echo "${{ matrix.target }}" | tr '/' '-')
+          if [ -f ${{ matrix.target }}/requirements.txt ]; then
+            cyclonedx-py requirements -i ${{ matrix.target }}/requirements.txt -o sbom-out/$NAME.cdx.json
+          elif [ -f ${{ matrix.target }}/pyproject.toml ]; then
+            cd ${{ matrix.target }} && cyclonedx-py environment -o ../../../sbom-out/$NAME.cdx.json || true
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-python-${{ matrix.target }}
+          path: sbom-out/
+
+  sbom-npm:
+    name: SBOM CycloneDX — HMI npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install cyclonedx-npm
+        run: npm install -g @cyclonedx/cyclonedx-npm
+      - name: install deps
+        working-directory: hmi-operador
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: generate SBOM
+        working-directory: hmi-operador
+        run: cyclonedx-npm --output-file sbom-hmi.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-npm
+          path: hmi-operador/sbom-hmi.cdx.json
+
+  sbom-aggregate:
+    name: SBOM agregado
+    needs: [sbom-rust, sbom-python, sbom-npm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: sboms/
+      - name: list
+        run: find sboms/ -type f | sort
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cupula-aggregate
+          path: sboms/

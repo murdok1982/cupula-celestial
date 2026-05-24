@@ -1,0 +1,23 @@
+syntax = "proto3";
+package cupula.audit.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message AuditEvent {
+    string event_id   = 1;
+    string event_type = 2;            // p.ej. "TRACK_CONFIRMED", "RECOMMENDATION_EMITTED"
+    google.protobuf.Timestamp timestamp = 3;
+    string actor      = 4;            // servicio o user_id
+    bytes  payload    = 5;            // JSON canonicalizado
+    string prev_hash  = 6;
+    string hash       = 7;
+    string signature  = 8;
+}
+
+message ChainVerifyResult {
+    bool valid = 1;
+    int64 last_verified_seq = 2;
+    int64 broken_at_seq = 3;
+    string expected_prev_hash = 4;
+    string actual_prev_hash = 5;
+}

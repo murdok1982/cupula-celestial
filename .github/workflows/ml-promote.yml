@@ -1,0 +1,56 @@
+name: ML Model Promotion
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model name in MLflow Registry'
+        required: true
+      version:
+        description: 'Model version to promote'
+        required: true
+      stage:
+        description: 'Target stage'
+        default: 'Production'
+        options: ['Staging', 'Production']
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Promote model stage
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MODEL_NAME: ${{ github.event.inputs.model_name }}
+          VERSION: ${{ github.event.inputs.version }}
+          STAGE: ${{ github.event.inputs.stage }}
+        run: |
+          pip install mlflow
+          python -c "import mlflow; from mlflow.tracking import MlflowClient; client = MlflowClient(); client.transition_model_version_stage(name='${MODEL_NAME}', version=int('${VERSION}'), stage='${STAGE}'); print(f'Promoted {MODEL_NAME} v{VERSION} -> {STAGE}')"
+      - name: Sign model bundle
+        env:
+          MODEL_NAME: ${{ github.event.inputs.model_name }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          pip install -e edge-llm
+          cat > /tmp/sign_bundle.py << 'PYEOF'
+          from pathlib import Path
+          import hashlib, json
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          from cryptography.hazmat.primitives import serialization
+          key = Ed25519PrivateKey.generate()
+          pubkey = key.public_key()
+          bundle_dir = Path('models/bundle')
+          bundle_dir.mkdir(parents=True, exist_ok=True)
+          pubkey_bytes = pubkey.public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)
+          (bundle_dir / 'pubkey.bin').write_bytes(pubkey_bytes)
+          print(f'Bundle signed for $MODEL_NAME v$VERSION')
+          PYEOF
+          python /tmp/sign_bundle.py
+      - name: Trigger OTA deployment
+        run: |
+          curl -X POST ${{ secrets.OTA_WEBHOOK_URL }} \
+            -H "Authorization: Bearer ${{ secrets.OTA_WEBHOOK_SECRET }}" \
+            -d '{"model": "${{ github.event.inputs.model_name }}", "version": ${{ github.event.inputs.version }}, "stage": "${{ github.event.inputs.stage }}"}'

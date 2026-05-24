@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cúpula Celestial · EngagementAuthDialog</title>
+  <style>
+    :root {
+      --bg-base: #0A0E14;
+      --bg-surface: #11161D;
+      --bg-elevated: #1A2129;
+      --bg-hover: #1F2730;
+      --bg-overlay: rgba(10, 14, 20, 0.85);
+      --fg-primary: #E6EDF3;
+      --fg-secondary: #B0BAC9;
+      --fg-tertiary: #6E7889;
+      --border-default: #2A3340;
+      --border-strong: #3D4A5C;
+      --threat-hostile: #E5484D;
+      --accent-engage: #E5484D;
+      --accent-engage-hover: #F05A60;
+      --accent-primary: #4D7BD8;
+      --status-success: #2BA968;
+      --status-warning: #E8A800;
+      --status-error: #E5484D;
+    }
+    * { box-sizing: border-box; }
+    html { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-feature-settings: 'tnum' 1, 'lnum' 1; }
+    body {
+      background: var(--bg-base);
+      color: var(--fg-primary);
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px;
+      /* Simula tener algo detrás del modal */
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(229,72,77,0.06) 0, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(62,99,221,0.06) 0, transparent 40%);
+    }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    .body-text { color: var(--fg-secondary); font-size: 13px; margin: 0 0 24px; max-width: 800px; line-height: 1.5; }
+
+    .backdrop {
+      position: fixed; inset: 0;
+      background: var(--bg-overlay);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .dialog {
+      width: 100%;
+      max-width: 720px;
+      background: var(--bg-surface);
+      border: 2px solid var(--accent-engage);
+      border-radius: 6px;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.6);
+      overflow: hidden;
+      animation: fadeIn 150ms ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+    .header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-default);
+      background: var(--bg-elevated);
+    }
+    .header h2 {
+      margin: 0;
+      font-family: 'IBM Plex Sans Condensed', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-engage);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .header p { margin: 4px 0 0; font-size: 13px; color: var(--fg-secondary); }
+
+    .body { padding: 20px 24px; }
+    .target-block {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .target-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    .target-row .lbl { color: var(--fg-tertiary); }
+    .target-row .val { color: var(--fg-primary); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .target-row .val.bold { font-weight: 700; }
+    .badge-h {
+      display: inline-flex; gap: 4px;
+      padding: 2px 6px; border-radius: 2px;
+      background: rgba(229,72,77,0.16);
+      border: 1px solid var(--accent-engage);
+      color: var(--accent-engage);
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .rationale-block {
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--fg-primary);
+      margin-bottom: 20px;
+    }
+    .rationale-block .lbl { color: var(--fg-tertiary); font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 500; letter-spacing: 0.05em; }
+
+    .auth-section {
+      border-top: 1px solid var(--border-default);
+      padding-top: 16px;
+      margin-top: 8px;
+    }
+    .auth-section h3 {
+      font-size: 11px; font-weight: 600; color: var(--fg-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin: 0 0 12px;
+    }
+    .factors { display: grid; gap: 10px; margin-bottom: 16px; }
+    .factor {
+      display: grid;
+      grid-template-columns: 140px 1fr 100px;
+      gap: 12px; align-items: center;
+      font-size: 13px;
+    }
+    .factor .lbl { color: var(--fg-tertiary); }
+    .factor input[type=password] {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 2px;
+      padding: 8px 12px;
+      color: var(--fg-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      width: 100%;
+      letter-spacing: 0.5em;
+      outline: none;
+    }
+    .factor input[type=password]:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(77,123,216,0.3);
+    }
+    .factor-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 2px;
+      text-align: center;
+    }
+    .factor-status.waiting {
+      background: rgba(77,123,216,0.10);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+    }
+    .factor-status.ok {
+      background: rgba(43,169,104,0.14);
+      color: var(--status-success);
+      border: 1px solid var(--status-success);
+    }
+    .factor-status.error {
+      background: rgba(229,72,77,0.14);
+      color: var(--status-error);
+      border: 1px solid var(--status-error);
+    }
+
+    .countdown {
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      gap: 12px;
+    }
+    .countdown-label { font-size: 11px; color: var(--fg-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .countdown-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--fg-primary);
+      letter-spacing: -0.02em;
+    }
+    .countdown-time.critical {
+      color: var(--accent-engage);
+      animation: pulseCountdown 1.5s ease-out infinite;
+    }
+    @keyframes pulseCountdown { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .footer {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-default);
+      background: var(--bg-elevated);
+    }
+    .btn {
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 14px; font-weight: 600;
+      transition: background 150ms, box-shadow 150ms, transform 80ms;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border-strong);
+      color: var(--fg-secondary);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--fg-primary); }
+    .btn-engage {
+      background: var(--accent-engage);
+      color: #FFF;
+      font-family: 'IBM Plex Sans Condensed', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0 32px;
+    }
+    .btn-engage:hover {
+      background: var(--accent-engage-hover);
+      box-shadow: 0 0 0 2px rgba(229,72,77,0.45), 0 0 16px rgba(229,72,77,0.35);
+    }
+    .btn-engage:disabled { background: #4A1B1D; color: var(--fg-tertiary); cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <h1>EngagementAuthDialog — autorización letal</h1>
+  <p class="body-text">Modal bloqueante con doble-factor (PIN + token FIDO2 + huella biométrica) y ventana temporal de 30 s. <strong>NO se cierra con Esc</strong> — requiere botón Abortar explícito. Cumple Meaningful Human Control (MHC) — ver <code>docs/08-roe-etica-marco-legal.md</code>.</p>
+
+  <div class="backdrop">
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="eng-title" aria-describedby="eng-desc">
+      <div class="header">
+        <h2 id="eng-title">⚠ Autorización de engagement</h2>
+        <p id="eng-desc">Esta acción es letal e irreversible. Verifique antes de continuar.</p>
+      </div>
+
+      <div class="body">
+
+        <div class="target-block" role="group" aria-label="Datos del objetivo">
+          <div class="target-row">
+            <span class="lbl">Objetivo:</span>
+            <span class="val bold">T-4471 &nbsp;&nbsp;<span class="badge-h">▼ HOSTIL CONFIRMADO</span></span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Tipo:</span>
+            <span class="val">UAV cuadricóptero · payload sospechoso</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Coordenadas:</span>
+            <span class="val">40.416775°N, -3.703790°W</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Altitud:</span>
+            <span class="val">120 m AGL</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">TTI:</span>
+            <span class="val bold">+04:18</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Interceptores:</span>
+            <span class="val">I-12 (Pk 0.87), I-19 (Pk 0.92)</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Pk combinada:</span>
+            <span class="val bold">0.89</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">Riesgo colateral:</span>
+            <span class="val">BAJO</span>
+          </div>
+          <div class="target-row">
+            <span class="lbl">ROE aplicable:</span>
+            <span class="val">ROE-7 (engagement autorizado)</span>
+          </div>
+        </div>
+
+        <div class="rationale-block">
+          <div class="lbl">Resumen del LLM</div>
+          Trayectoria balística hacia activo crítico C-3. Sin amigos en línea de fuego. ROE-7 permite engagement automático en ventana 4.2 s. Riesgo colateral BAJO: zona de impacto sobre lámina de agua portuaria.
+        </div>
+
+        <div class="auth-section">
+          <h3>Doble factor de autorización</h3>
+          <div class="factors">
+            <label class="factor">
+              <span class="lbl">PIN operador:</span>
+              <input type="password" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" aria-label="PIN de 6 dígitos" value="" />
+              <span class="factor-status waiting" aria-live="polite">Esperando</span>
+            </label>
+            <div class="factor">
+              <span class="lbl">Token FIDO2:</span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--fg-secondary);">⬤ Detectando token físico...</span>
+              <span class="factor-status waiting" aria-live="polite">Esperando</span>
+            </div>
+            <div class="factor">
+              <span class="lbl">Huella biométrica:</span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--fg-secondary);">⬤ Esperando lectura...</span>
+              <span class="factor-status waiting" aria-live="polite">Esperando</span>
+            </div>
+          </div>
+
+          <div class="countdown" role="timer" aria-live="polite" aria-label="Ventana de autorización restante">
+            <span class="countdown-label">Ventana de autorización</span>
+            <span class="countdown-time">00:23</span>
+            <span class="countdown-label">/ 00:30</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer">
+        <button class="btn btn-ghost" type="button">Abortar</button>
+        <button class="btn btn-engage" type="button" disabled aria-label="Autorizar engagement (requiere 3 factores OK)">→ AUTORIZAR</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+# ===========================================================================
+# Redpanda bootstrap.yaml — configuración SASL/SCRAM-SHA-256 + TLS.
+# Cúpula Celestial FASE 2 — producción.
+#
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  PRODUCCIÓN: este archivo activa SASL_SCRAM + TLS.                     ║
+# ║  PoC: cambiar Kafka protocol a PLAINTEXT (ver abajo).                  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+# ===========================================================================
+
+# --- TLS ---
+redpanda:
+  tls:
+    key_file: /etc/redpanda/certs/redpanda.key
+    cert_file: /etc/redpanda/certs/redpanda.crt
+    truststore_file: /etc/redpanda/certs/ca.crt
+  kafka_api:
+    - name: sasl_tls
+      address: 0.0.0.0
+      port: 9093
+      authentication_method: sasl
+      sasl_mechanisms:
+        - SCRAM-SHA-256
+      tls:
+        key_file: /etc/redpanda/certs/redpanda.key
+        cert_file: /etc/redpanda/certs/redpanda.crt
+        truststore_file: /etc/redpanda/certs/ca.crt
+        enabled: true
+        require_client_auth: true
+  pandaproxy:
+    tls:
+      key_file: /etc/redpanda/certs/redpanda.key
+      cert_file: /etc/redpanda/certs/redpanda.crt
+      truststore_file: /etc/redpanda/certs/ca.crt
+      enabled: true
+  rpc_server:
+    tls:
+      key_file: /etc/redpanda/certs/redpanda.key
+      cert_file: /etc/redpanda/certs/redpanda.crt
+      truststore_file: /etc/redpanda/certs/ca.crt
+      enabled: true
+  auto_create_topics_enabled: false
+
+# --- Superusuarios ---
+superusers:
+  - admin
+
+# --- Usuarios SCRAM ---
+# Creados en el primer arranque por setup-acls.sh (rpk security user create).
+
+# --- PoC: descomentar para desarrollo sin TLS/SASL ---
+# redpanda:
+#   kafka_api:
+#     - name: plaintext
+#       address: 0.0.0.0
+#       port: 9092
+#       authentication_method: none
+
+# Tópicos esperados (referencia para ACLs):
+# - sensors.raw          (sensor-ingest produce, track-fusion consume)
+# - tracks.confirmed     (track-fusion produce, hmi-gateway/threat-classifier consume)
+# - tracks.candidate     (track-fusion produce/consume internal)
+# - recommendations      (decision-engine produce, hmi-gateway/audit-log consume)
+# - alerts               (varios produce, hmi-gateway consume)
+# - engagement.authorized (hmi-gateway produce, swarm-controller/audit-log consume)
+# - audit.events         (audit-log produce/consume)

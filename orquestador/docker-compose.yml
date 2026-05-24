@@ -1,0 +1,518 @@
+name: cupula-celestial
+
+# ===========================================================================
+# Cúpula Celestial — stack completo del orquestador C2 + simulador.
+# Arranque: `make up` (genera certs + compose up).
+#
+# Mejoras FASE 1 (audit):
+#  - H-ALT-007: Postgres ya NO publica 5432 al host.
+#  - H-ALT-008: Redis con AUTH obligatoria.
+#  - H-ALT-009: Redpanda permanece en plaintext PERO sin publicar al host.
+#  - H-CRIT-001: swarm-controller NO publica 9200 al host.
+#  - H-ALT-006: usuarios no-root.
+#
+# Mejoras FASE 2 (endurecimiento operacional):
+#  - mTLS interno opcional: monta ./mtls/certs en /run/mtls (cada servicio).
+#  - Redpanda con SASL/SCRAM-SHA-256 + TLS habilitado si certs existen.
+#  - Sandbox seccomp + AppArmor para ollama y decision-engine.
+#  - Prometheus + Grafana para observabilidad.
+#  - SoftHSM en audit-log para firma de batches.
+#  - HSM key persisted en volumen audit-hsm.
+# ===========================================================================
+
+networks:
+  cupula:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  redpanda-data:
+  ollama-data:
+  audit-objects:
+  audit-hsm:        # FASE 2: SoftHSM Ed25519 key
+  prometheus-data:  # FASE 2
+  grafana-data:     # FASE 2
+
+x-common-env: &common-env
+  RUST_BACKTRACE: "1"
+  RUST_LOG: ${RUST_LOG:-info}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+  OTEL_SERVICE_NAMESPACE: ${OTEL_SERVICE_NAMESPACE:-cupula}
+  # FASE 2 — Kafka SASL (los servicios lo aplican si SECURITY_PROTOCOL existe)
+  KAFKA_SECURITY_PROTOCOL: ${KAFKA_SECURITY_PROTOCOL:-}
+  KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-}
+
+# FASE 2 — Anchor para opciones de hardening containers (sandbox).
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+
+  # =========================================================================
+  #  Infraestructura
+  # =========================================================================
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: cupula-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cupula}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-cupula}
+    volumes:
+      - postgres-data:/home/postgres/pgdata/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    # H-ALT-007: sin publicación al host. Acceso sólo intra-network.
+    expose:
+      - "5432"
+    networks: [cupula]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cupula -d cupula"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: cupula-redis
+    # H-ALT-008: requirepass obligatorio. Las credenciales vienen del .env.
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:-changeme_dev_only}
+    volumes:
+      - redis-data:/data
+    # H-ALT-007: no publicar al host.
+    expose:
+      - "6379"
+    networks: [cupula]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping || redis-cli ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_dev_only}
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    container_name: cupula-redpanda
+    # DEV: plaintext. PRODUCTION: activar SASL+SCRAM+TLS (descomentar líneas abajo y
+    # cambiar bootstrap.yaml al bloque de producción).
+    environment:
+      REDPANDA_SASL_MECHANISM: ${REDPANDA_SASL_MECHANISM:-}
+      REDPANDA_SUPERUSER: ${REDPANDA_SUPERUSER:-admin}
+      REDPANDA_SUPERUSER_PASSWORD: ${KAFKA_SUPERUSER_PWD:-}
+      # Descomentar para TLS:
+      # REDPANDA_TLS_KEY_FILE: /etc/redpanda/certs/redpanda.key
+      # REDPANDA_TLS_CERT_FILE: /etc/redpanda/certs/redpanda.crt
+      # REDPANDA_TLS_TRUSTSTORE_FILE: /etc/redpanda/certs/ca.crt
+    # DEV command (plaintext, bootstrap.yaml no usado para listeners)
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=redpanda:8082
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      # Producción: usar bootstrap.yaml con TLS+SCRAM
+      # - --kafka-addr=SASL_SSL://0.0.0.0:9093
+      # - --advertise-kafka-addr=SASL_SSL://redpanda:9093
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+      - ./redpanda/bootstrap.yaml:/etc/redpanda/bootstrap.yaml:ro
+      - ./mtls/certs:/etc/redpanda/certs:ro
+    # H-ALT-009: sin publicación al host (sólo intra-network).
+    expose:
+      - "9092"
+      - "9093"
+      - "8082"
+    networks: [cupula]
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    container_name: cupula-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # UI (dev only)
+      - "4317:4317"     # OTLP gRPC (dev only)
+    networks: [cupula]
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cupula-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    expose:
+      - "11434"
+    networks: [cupula]
+    # FASE 2 — sandbox seccomp + sin caps + read-only filesystem.
+    security_opt:
+      - seccomp=./sandbox/seccomp-ollama.json
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Sin GPU: el decision-engine usa stub si timeout. Con GPU descomentar deploy.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+
+  policy-engine:
+    image: openpolicyagent/opa:0.68.0-rootless
+    container_name: cupula-opa
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - --log-level=info
+      - --set=decision_logs.console=true
+      - /policies
+      - /data
+    volumes:
+      - ./services/policy-engine/policies:/policies:ro
+      - ./services/policy-engine/data:/data:ro
+    ports:
+      - "8181:8181"
+    networks: [cupula]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8181/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # =========================================================================
+  #  Servicios Rust
+  # =========================================================================
+  sensor-ingest:
+    build:
+      context: .
+      dockerfile: services/sensor-ingest/Dockerfile
+    container_name: cupula-sensor-ingest
+    environment:
+      <<: *common-env
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: sensor-ingest
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_SENSOR_INGEST:-}
+      REDIS_URL: ${REDIS_URL}
+      SENSOR_HMAC_KEYS: ${SENSOR_HMAC_KEYS}
+      SENSOR_HMAC_REQUIRED: ${SENSOR_HMAC_REQUIRED:-true}
+      SENSOR_INGEST_BIND: 0.0.0.0:9000
+      # FASE 2 — mTLS opcional
+      TLS_CERT_PATH: /run/mtls/sensor-ingest.crt
+      TLS_KEY_PATH:  /run/mtls/sensor-ingest.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      OTEL_SERVICE_NAME: sensor-ingest
+    volumes:
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "9000:9000"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  track-fusion:
+    build:
+      context: .
+      dockerfile: services/track-fusion/Dockerfile
+    container_name: cupula-track-fusion
+    environment:
+      <<: *common-env
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: track-fusion
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_TRACK_FUSION:-}
+      TRACK_FUSION_BIND: 0.0.0.0:9100
+      TRACK_CONFIRM_M: ${TRACK_CONFIRM_M:-3}
+      TRACK_CONFIRM_N: ${TRACK_CONFIRM_N:-5}
+      TLS_CERT_PATH: /run/mtls/track-fusion.crt
+      TLS_KEY_PATH:  /run/mtls/track-fusion.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      OTEL_SERVICE_NAME: track-fusion
+    volumes:
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "9100:9100"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+
+  swarm-controller:
+    build:
+      context: .
+      dockerfile: services/swarm-controller/Dockerfile
+    container_name: cupula-swarm-controller
+    environment:
+      <<: *common-env
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: swarm-controller
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_SWARM_CONTROLLER:-}
+      SWARM_BIND: 0.0.0.0:9200
+      MAVLINK_TARGET: ${MAVLINK_TARGET:-drone-simulator:14550}
+      AUDIT_LOG_URL: http://audit-log:9300
+      INTERNAL_SVC_HMAC_KEY: ${INTERNAL_SVC_HMAC_KEY}
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      JWT_ISSUER: cupula-celestial
+      JWT_AUDIENCE: hmi-operador
+      TLS_CERT_PATH: /run/mtls/swarm-controller.crt
+      TLS_KEY_PATH:  /run/mtls/swarm-controller.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      OTEL_SERVICE_NAME: swarm-controller
+    volumes:
+      - ./.secrets:/run/secrets:ro
+      - ./mtls/certs:/run/mtls:ro
+    # H-CRIT-001: NO publicar 9200 al host. Sólo intra-network.
+    expose:
+      - "9200"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+
+  hmi-gateway:
+    build:
+      context: .
+      dockerfile: services/hmi-gateway/Dockerfile
+    container_name: cupula-hmi-gateway
+    environment:
+      <<: *common-env
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: hmi-gateway
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_HMI_GATEWAY:-}
+      REDIS_URL: ${REDIS_URL}
+      HMI_BIND: 0.0.0.0:8080
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private.pem
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      JWT_ALGORITHM: RS256
+      JWT_ACCESS_TOKEN_MINUTES: 15
+      JWT_REFRESH_TOKEN_DAYS: 7
+      JWT_ISSUER: cupula-celestial
+      JWT_AUDIENCE: hmi-operador
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      AUDIT_LOG_URL: http://audit-log:9300
+      INTERNAL_SVC_HMAC_KEY: ${INTERNAL_SVC_HMAC_KEY}
+      # FASE 2 — default true (webauthn-rs real). Stub canario activable con false.
+      FIDO2_REAL_VERIFY: ${FIDO2_REAL_VERIFY:-true}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-cupula.local}
+      WEBAUTHN_RP_ORIGIN: ${WEBAUTHN_RP_ORIGIN:-https://cupula.local}
+      WEBAUTHN_RP_NAME: "Cúpula Celestial"
+      # FASE 2 — mTLS opcional (carga si los archivos existen).
+      TLS_CERT_PATH: /run/mtls/hmi-gateway.crt
+      TLS_KEY_PATH:  /run/mtls/hmi-gateway.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      MTLS_REQUIRE_CLIENT_CERT: ${MTLS_REQUIRE_CLIENT_CERT:-false}
+      OTEL_SERVICE_NAME: hmi-gateway
+    volumes:
+      - ./.secrets:/run/secrets:ro
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "8080:8080"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  audit-log:
+    build:
+      context: .
+      dockerfile: services/audit-log/Dockerfile
+    container_name: cupula-audit-log
+    environment:
+      <<: *common-env
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: audit-log
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_AUDIT_LOG:-}
+      AUDIT_LOG_GENESIS_HASH: ${AUDIT_LOG_GENESIS_HASH:-0000000000000000000000000000000000000000000000000000000000000000}
+      # FASE 2 — HSM
+      HSM_BACKEND: ${HSM_BACKEND:-softhsm}
+      HSM_KEY_PATH: /var/lib/cupula-hsm/hsm-key.pem
+      # FASE 2 — mTLS opcional
+      TLS_CERT_PATH: /run/mtls/audit-log.crt
+      TLS_KEY_PATH:  /run/mtls/audit-log.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      MTLS_REQUIRE_CLIENT_CERT: ${MTLS_REQUIRE_CLIENT_CERT:-false}
+      OTEL_SERVICE_NAME: audit-log
+    volumes:
+      - audit-objects:/var/lib/audit
+      - audit-hsm:/var/lib/cupula-hsm
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "9300:9300"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+
+  # =========================================================================
+  #  Servicios Python
+  # =========================================================================
+  threat-classifier:
+    build:
+      context: ./services/threat-classifier
+      dockerfile: Dockerfile
+    container_name: cupula-threat-classifier
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql+asyncpg://cupula:${POSTGRES_PASSWORD:-changeme_dev_only}@postgres:5432/cupula
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: threat-classifier
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_THREAT_CLASSIFIER:-}
+      THREAT_CLASSIFIER_BIND: 0.0.0.0:8001
+      TLS_CERT_PATH: /run/mtls/threat-classifier.crt
+      TLS_KEY_PATH:  /run/mtls/threat-classifier.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+      OTEL_SERVICE_NAME: threat-classifier
+    volumes:
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "8001:8001"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+
+  decision-engine:
+    build:
+      context: ./services/decision-engine
+      dockerfile: Dockerfile
+    container_name: cupula-decision-engine
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql+asyncpg://cupula:${POSTGRES_PASSWORD:-changeme_dev_only}@postgres:5432/cupula
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-redpanda:9092}
+      KAFKA_SASL_USERNAME: decision-engine
+      KAFKA_SASL_PASSWORD: ${KAFKA_PWD_DECISION_ENGINE:-}
+      OPA_URL: ${OPA_URL:-http://policy-engine:8181}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct-q4_K_M}
+      LLM_FALLBACK_STUB: ${LLM_FALLBACK_STUB:-true}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-8}
+      DECISION_ENGINE_BIND: 0.0.0.0:8002
+      OTEL_SERVICE_NAME: decision-engine
+      # FASE 2 — TLS opcional para uvicorn
+      TLS_CERT_PATH: /run/mtls/decision-engine.crt
+      TLS_KEY_PATH:  /run/mtls/decision-engine.key
+      TLS_CA_PATH:   /run/mtls/ca.crt
+    volumes:
+      - ./mtls/certs:/run/mtls:ro
+    ports:
+      - "8002:8002"
+    networks: [cupula]
+    # FASE 2 — sandbox completo
+    security_opt:
+      - seccomp=./sandbox/seccomp-decision-engine.json
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+      policy-engine: { condition: service_healthy }
+
+  # =========================================================================
+  #  Simuladores (definidos también en simulador/docker-compose.yml para uso aislado)
+  # =========================================================================
+  sensor-simulator:
+    build:
+      context: ../simulador/sensor-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-sensor-simulator
+    environment:
+      <<: *common-env
+      SENSOR_INGEST_URL: http://sensor-ingest:9000
+      SCENARIO: ${SCENARIO:-single}
+      SENSOR_HMAC_KEYS: ${SENSOR_HMAC_KEYS}
+    networks: [cupula]
+    profiles: ["simulate"]
+    depends_on:
+      sensor-ingest: { condition: service_started }
+
+  drone-simulator:
+    build:
+      context: ../simulador/drone-simulator
+      dockerfile: Dockerfile
+    container_name: cupula-drone-simulator
+    environment:
+      <<: *common-env
+      MAVLINK_BIND: 0.0.0.0:14550
+      DRONE_COUNT: ${DRONE_COUNT:-6}
+    ports:
+      - "14550:14550/udp"
+    networks: [cupula]
+    profiles: ["simulate"]
+
+  # =========================================================================
+  #  Observabilidad (FASE 2) — Prometheus + Grafana
+  # =========================================================================
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: cupula-prometheus
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    ports:
+      - "9090:9090"
+    networks: [cupula]
+    security_opt:
+      - no-new-privileges:true
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: cupula-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme_dev_only}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    networks: [cupula]
+    depends_on:
+      prometheus: { condition: service_started }
+    security_opt:
+      - no-new-privileges:true

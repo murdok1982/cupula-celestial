@@ -1,0 +1,39 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://cupula.defensa.gob.es/schemas/vlm_output.schema.json",
+    "title": "VLMOutput",
+    "description": "Salida del VLM embarcado (Stage 3) en el dron interceptor. Determinista, validada antes de cualquier acción terminal.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "target_present",
+        "class",
+        "confidence",
+        "iff_marks",
+        "civilian_proximity",
+        "frame_id",
+        "inference_ms"
+    ],
+    "properties": {
+        "target_present": { "type": "boolean" },
+        "class": {
+            "type": "string",
+            "enum": ["UNKNOWN", "ROTARY_UAV", "FIXED_WING_UAV", "LOITERING_MUNITION", "BIRD", "AIRCRAFT_CIVIL", "AIRCRAFT_MIL", "GROUND_VEHICLE", "PERSON"]
+        },
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "iff_marks": { "type": "boolean", "description": "true si se detecta marca/luz/banderín amigo" },
+        "civilian_proximity": {
+            "type": "string",
+            "enum": ["NONE", "LOW", "MEDIUM", "HIGH"]
+        },
+        "frame_id": { "type": "string" },
+        "inference_ms": { "type": "number", "minimum": 0 },
+        "bbox": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 4,
+            "maxItems": 4
+        },
+        "notes": { "type": "string", "maxLength": 256 }
+    }
+}

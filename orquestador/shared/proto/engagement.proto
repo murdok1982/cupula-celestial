@@ -1,0 +1,77 @@
+syntax = "proto3";
+package cupula.engagement.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Recommendation {
+    string recommendation_id = 1;
+    string track_id = 2;
+    google.protobuf.Timestamp generated_at = 3;
+    RecommendationKind kind = 4;
+    repeated string interceptors_proposed = 5;
+    EngagementWindow window = 6;
+    float pk_estimated = 7;
+    CollateralRisk collateral_risk = 8;
+    string rationale = 9;
+    bool operator_action_required = 10;
+    AuthorizationLevel authorization_level = 11;
+    string roe_version = 12;
+    string llm_model = 13;             // "qwen2.5:7b" | "stub-deterministic"
+    repeated string policies_consulted = 14;
+}
+
+enum RecommendationKind {
+    REC_UNSPECIFIED = 0;
+    OBSERVE   = 1;
+    TRACK     = 2;
+    WARN      = 3;
+    ENGAGE    = 4;
+    ABORT     = 5;
+}
+
+message EngagementWindow {
+    int64 start_ms = 1;
+    int64 end_ms   = 2;
+}
+
+enum CollateralRisk {
+    COL_UNKNOWN = 0;
+    NEGLIGIBLE  = 1;
+    LOW         = 2;
+    MEDIUM      = 3;
+    HIGH        = 4;
+}
+
+enum AuthorizationLevel {
+    AUTH_UNSPECIFIED = 0;
+    OPS_OFFICER = 1;
+    CO          = 2;
+    JOINT_CO    = 3;
+}
+
+message Authorization {
+    string recommendation_id = 1;
+    string operator_id = 2;
+    google.protobuf.Timestamp authorized_at = 3;
+    bool authorized = 4;               // false = denegado
+    string mfa_proof = 5;              // hash del segundo factor
+    string operator_comment = 6;
+}
+
+message InterceptorCommand {
+    string command_id = 1;
+    string interceptor_id = 2;
+    string track_id = 3;
+    google.protobuf.Timestamp commanded_at = 4;
+    Waypoint launch_to = 5;
+    repeated Waypoint waypoints = 6;
+    int32 engage_within_s = 7;
+    bool abort = 8;
+}
+
+message Waypoint {
+    double latitude = 1;
+    double longitude = 2;
+    double altitude_m = 3;
+    double speed_mps = 4;
+}

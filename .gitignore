@@ -1,0 +1,76 @@
+# Secrets y credenciales (NUNCA commitear)
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+secrets/
+credentials/
+keys/
+
+# FASE 2 — mTLS y HSM
+orquestador/mtls/certs/
+orquestador/.secrets/
+edge-llm/keys/*.key
+edge-llm/keys/*.pem
+edge-llm/ota/*.bundle/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / TS
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Modelos ML (gestionar con DVC)
+*.pt
+*.pth
+*.onnx
+*.gguf
+*.safetensors
+*.engine
+*.plan
+models/
+
+# Datos
+data/raw/
+data/processed/
+*.parquet
+*.h5
+
+# Logs
+*.log
+logs/
+
+# Sistema
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Clasificación
+*CONFIDENCIAL*
+*RESERVADO*
+*SECRETO*
+*EU-R*
+*NATO-R*
