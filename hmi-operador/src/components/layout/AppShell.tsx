@@ -17,6 +17,7 @@ export function AppShell({ children }: Props): JSX.Element {
   const { logout } = useAuth();
   const displayMode = useOperatorStore((s) => s.displayMode);
   const fontScale = useOperatorStore((s) => s.fontScale);
+  const emergencyMode = useOperatorStore((s) => s.emergencyMode);
 
   useWebSocket();
 
@@ -42,6 +43,7 @@ export function AppShell({ children }: Props): JSX.Element {
         'flex flex-col min-h-screen w-full bg-bg-base',
         displayMode === 'night' && 'night-mode',
         displayMode === 'colorblind' && 'colorblind-mode',
+        emergencyMode && 'emergency-mode',
       )}
       style={{ fontSize: `${fontScale * 100}%` }}
       data-display-mode={displayMode}

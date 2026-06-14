@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOperatorStore, type DisplayMode } from '@/store/operatorStore';
+import { useOperatorStore, type DisplayMode, type LayoutMode } from '@/store/operatorStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -22,8 +22,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-export type LayoutMode = '3col' | '2col' | 'map-only';
-
 interface PingResult {
   name: string;
   url: string;
@@ -43,10 +41,10 @@ const LANGS: Array<{ code: string; label: string }> = [
   { code: 'fr', label: 'Francais' },
 ];
 
-const LAYOUT_MODES: Array<{ id: LayoutMode; label: string; desc: string }> = [
-  { id: '3col', label: '3 columnas', desc: 'Pistas | Mapa | Detalle' },
-  { id: '2col', label: '2 columnas mapa expandido', desc: 'Pistas | Mapa expandido' },
-  { id: 'map-only', label: 'Solo mapa', desc: 'Mapa a pantalla completa' },
+const LAYOUT_MODES: Array<{ id: LayoutMode; labelKey: string; descKey: string }> = [
+  { id: '3col', labelKey: 'settings.layout3col', descKey: 'settings.layout3colDesc' },
+  { id: '2col', labelKey: 'settings.layout2col', descKey: 'settings.layout2colDesc' },
+  { id: 'map-only', labelKey: 'settings.layoutMapOnly', descKey: 'settings.layoutMapOnlyDesc' },
 ];
 
 const SERVICES = [
@@ -60,11 +58,10 @@ export function SettingsPage(): JSX.Element {
   const displayMode = useOperatorStore((s) => s.displayMode);
   const fontScale = useOperatorStore((s) => s.fontScale);
   const audio = useOperatorStore((s) => s.audioAlertsEnabled);
-  const storedLayout = useOperatorStore((s) => (s as Record<string, unknown>).layoutMode as LayoutMode | undefined);
-  const storedEmergency = useOperatorStore((s) => (s as Record<string, unknown>).emergencyMode as boolean | undefined);
+  const layoutMode = useOperatorStore((s) => s.layoutMode);
+  const emergencyMode = useOperatorStore((s) => s.emergencyMode);
 
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(storedLayout ?? '3col');
-  const [emergencyMode, setEmergencyMode] = useState(storedEmergency ?? false);
+  const prevLayoutRef = useRef<LayoutMode>(layoutMode);
   const [pings, setPings] = useState<PingResult[]>(
     SERVICES.map((s) => ({ ...s, status: 'idle' })),
   );
@@ -103,8 +100,8 @@ export function SettingsPage(): JSX.Element {
     useOperatorStore.getState().setDisplayMode('tactical');
     useOperatorStore.getState().setFontScale(1.0);
     useOperatorStore.getState().setAudioAlertsEnabled(true);
-    setLayoutMode('3col');
-    setEmergencyMode(false);
+    useOperatorStore.getState().setLayoutMode('3col');
+    useOperatorStore.getState().setEmergencyMode(false);
     if (i18n.language !== 'es') void i18n.changeLanguage('es');
     setPings(SERVICES.map((s) => ({ ...s, status: 'idle' })));
   }, []);
@@ -151,8 +148,8 @@ export function SettingsPage(): JSX.Element {
           if (config.fontScale) useOperatorStore.getState().setFontScale(config.fontScale);
           if (config.audioAlertsEnabled !== undefined)
             useOperatorStore.getState().setAudioAlertsEnabled(config.audioAlertsEnabled);
-          if (config.layoutMode) setLayoutMode(config.layoutMode);
-          if (config.emergencyMode !== undefined) setEmergencyMode(config.emergencyMode);
+          if (config.layoutMode) useOperatorStore.getState().setLayoutMode(config.layoutMode);
+          if (config.emergencyMode !== undefined) useOperatorStore.getState().setEmergencyMode(config.emergencyMode);
           if (config.locale) void i18n.changeLanguage(config.locale);
           setImportStatus('OK');
         } catch {
@@ -166,17 +163,21 @@ export function SettingsPage(): JSX.Element {
   );
 
   const handleSetLayoutMode = useCallback((mode: LayoutMode) => {
-    setLayoutMode(mode);
+    useOperatorStore.getState().setLayoutMode(mode);
   }, []);
 
   const handleToggleEmergency = useCallback(() => {
-    setEmergencyMode((prev) => !prev);
-    if (!emergencyMode) {
-      // Emergency mode: simplify to map-only, switch to tactical display
-      setLayoutMode('map-only');
-      useOperatorStore.getState().setDisplayMode('tactical');
+    const store = useOperatorStore.getState();
+    if (!store.emergencyMode) {
+      prevLayoutRef.current = store.layoutMode;
+      store.setLayoutMode('map-only');
+      store.setDisplayMode('tactical');
+      store.setEmergencyMode(true);
+    } else {
+      store.setLayoutMode(prevLayoutRef.current);
+      store.setEmergencyMode(false);
     }
-  }, [emergencyMode]);
+  }, []);
 
   return (
     <div className="flex-1 p-3 overflow-auto">
@@ -196,15 +197,15 @@ export function SettingsPage(): JSX.Element {
                 className={cn('h-4 w-4', emergencyMode ? 'text-threat-hostile' : 'text-text-muted')}
                 aria-hidden
               />
-              Modo emergencia
+              {t('settings.emergencyMode')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <p className="text-tactical-sm font-mono text-text-secondary">
                 {emergencyMode
-                  ? 'Modo emergencia ACTIVO: UI simplificada al minimo. Se requiere reinicio manual.'
-                  : 'Activar para simplificar la interfaz a solo el mapa tactico.'}
+                  ? t('settings.emergencyActive')
+                  : t('settings.emergencyInactive')}
               </p>
               <Button
                 variant={emergencyMode ? 'destructive' : 'outline'}
@@ -212,7 +213,7 @@ export function SettingsPage(): JSX.Element {
                 aria-pressed={emergencyMode}
                 data-testid="btn-emergency"
               >
-                {emergencyMode ? 'Desactivar emergencia' : 'Activar emergencia'}
+                {emergencyMode ? t('settings.emergencyDeactivate') : t('settings.emergencyActivate')}
               </Button>
             </div>
           </CardContent>
@@ -245,7 +246,7 @@ export function SettingsPage(): JSX.Element {
             {/* Layout selector */}
             <fieldset className="space-y-2">
               <legend className="text-tactical-sm font-medium uppercase tracking-wider text-text-secondary">
-                Layout
+                {t('settings.layout')}
               </legend>
               <div className="grid grid-cols-3 gap-2">
                 {LAYOUT_MODES.map((m) => (
@@ -257,8 +258,8 @@ export function SettingsPage(): JSX.Element {
                     className="flex-col h-auto py-2 gap-1"
                     data-testid={`layout-${m.id}`}
                   >
-                    <span className="text-tactical-sm">{m.label}</span>
-                    <span className="text-tactical-xs text-text-muted font-normal">{m.desc}</span>
+                    <span className="text-tactical-sm">{t(m.labelKey)}</span>
+                    <span className="text-tactical-xs text-text-muted font-normal">{t(m.descKey)}</span>
                   </Button>
                 ))}
               </div>
@@ -315,7 +316,7 @@ export function SettingsPage(): JSX.Element {
             <fieldset className="space-y-2">
               <legend className="text-tactical-sm font-medium uppercase tracking-wider text-text-secondary flex items-center gap-2">
                 <Server className="h-3.5 w-3.5" aria-hidden />
-                Diagnostico de conexion
+                {t('settings.connectionDiag')}
               </legend>
               <div className="space-y-1">
                 {pings.map((p, idx) => (
@@ -331,7 +332,7 @@ export function SettingsPage(): JSX.Element {
                       {p.status === 'ok' && (
                         <Badge variant="cyan">{p.latency}ms</Badge>
                       )}
-                      {p.status === 'fail' && <Badge variant="hostile">Sin respuesta</Badge>}
+                      {p.status === 'fail' && <Badge variant="hostile">{t('settings.noResponse')}</Badge>}
                       <Button variant="ghost" size="sm" onClick={() => handlePing(idx)} disabled={p.status === 'pending'}>
                         Ping
                       </Button>
@@ -340,7 +341,7 @@ export function SettingsPage(): JSX.Element {
                 ))}
               </div>
               <Button variant="outline" size="sm" onClick={handlePingAll} className="w-full">
-                Ping todos los servicios
+                {t('settings.pingAll')}
               </Button>
             </fieldset>
 
@@ -350,11 +351,11 @@ export function SettingsPage(): JSX.Element {
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleExport} className="flex-1" data-testid="btn-export-config">
                 <Download className="h-3.5 w-3.5 mr-1" aria-hidden />
-                Exportar configuracion
+                {t('settings.exportConfig')}
               </Button>
               <Button variant="outline" onClick={handleImport} className="flex-1" data-testid="btn-import-config">
                 <Upload className="h-3.5 w-3.5 mr-1" aria-hidden />
-                Importar configuracion
+                {t('settings.importConfig')}
               </Button>
               <input
                 ref={fileInputRef}
@@ -369,13 +370,13 @@ export function SettingsPage(): JSX.Element {
             {importStatus === 'OK' && (
               <Alert variant="success" className="py-2">
                 <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>Configuracion importada correctamente</AlertTitle>
+                <AlertTitle>{t('settings.importOk')}</AlertTitle>
               </Alert>
             )}
             {importStatus === 'ERROR' && (
               <Alert variant="critical" className="py-2">
                 <XCircle className="h-4 w-4" />
-                <AlertTitle>Error al importar. Revise el archivo.</AlertTitle>
+                <AlertTitle>{t('settings.importError')}</AlertTitle>
               </Alert>
             )}
 
@@ -384,26 +385,26 @@ export function SettingsPage(): JSX.Element {
             {/* Factory reset */}
             <Button variant="destructive" onClick={handleReset} className="w-full" data-testid="btn-factory-reset">
               <RotateCcw className="h-3.5 w-3.5 mr-1" aria-hidden />
-              Restaurar valores de fabrica
+              {t('settings.factoryReset')}
             </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-bg-base">
           <CardHeader>
-            <CardTitle className="text-tactical-sm">Atajos de teclado</CardTitle>
+            <CardTitle className="text-tactical-sm">{t('settings.shortcuts')}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-tactical-xs font-mono">
-              <dt className="text-text-muted">F1</dt><dd>Ayuda / ajustes</dd>
-              <dt className="text-text-muted">F2</dt><dd>Vista de pistas</dd>
-              <dt className="text-text-muted">F3</dt><dd>Mapa / dashboard</dd>
-              <dt className="text-text-muted">F4</dt><dd>Recomendaciones</dd>
-              <dt className="text-text-muted">Ctrl+A</dt><dd>Autorizar engagement</dd>
-              <dt className="text-text-muted">Ctrl+R</dt><dd>Rechazar engagement</dd>
-              <dt className="text-text-muted">Ctrl+D</dt><dd>Diferir decision</dd>
-              <dt className="text-text-muted">Esc</dt><dd>Cerrar modal</dd>
-              <dt className="text-text-muted">Ctrl+Shift+L</dt><dd>Logout inmediato</dd>
+              <dt className="text-text-muted">F1</dt><dd>{t('settings.shortcutSettings')}</dd>
+              <dt className="text-text-muted">F2</dt><dd>{t('settings.shortcutTracks')}</dd>
+              <dt className="text-text-muted">F3</dt><dd>{t('settings.shortcutDashboard')}</dd>
+              <dt className="text-text-muted">F4</dt><dd>{t('settings.shortcutEngagements')}</dd>
+              <dt className="text-text-muted">Ctrl+A</dt><dd>{t('settings.shortcutAuthorize')}</dd>
+              <dt className="text-text-muted">Ctrl+R</dt><dd>{t('settings.shortcutReject')}</dd>
+              <dt className="text-text-muted">Ctrl+D</dt><dd>{t('settings.shortcutDefer')}</dd>
+              <dt className="text-text-muted">Esc</dt><dd>{t('settings.shortcutCloseModal')}</dd>
+              <dt className="text-text-muted">Ctrl+Shift+L</dt><dd>{t('settings.shortcutLogout')}</dd>
             </dl>
           </CardContent>
         </Card>

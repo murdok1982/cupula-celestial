@@ -74,7 +74,7 @@ anyhow = "1.0"
 dotenvy = "0.15"
 
 # MAVLink
-mavlink = { version = "0.13", default-features = false, features = ["std", "tokio-1", "common", "serde"] }
+mavlink = { version = "0.13", default-features = false, features = ["std", "tcp", "common", "serde"] }
 
 [profile.release]
 opt-level = 3

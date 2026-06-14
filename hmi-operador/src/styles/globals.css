@@ -32,8 +32,6 @@
     outline: none;
   }
 
-  /* Anti-pattern de la mayor parte de los sistemas tacticos: el foco debe ser
-     SIEMPRE visible. WCAG 2.4.7. */
   *:focus-visible {
     outline: 2px solid #00d4ff;
     outline-offset: 2px;
@@ -44,16 +42,15 @@
     color: #ffffff;
   }
 
-  /* Scrollbar tactico */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #1a2332;
+    background: #11161d;
   }
   ::-webkit-scrollbar-thumb {
-    background: #3d4a66;
+    background: #3d4a5c;
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -65,19 +62,48 @@
    Modos especiales de pantalla
    ================================================================ */
 @layer utilities {
-  /* Vision nocturna: filtro rojo monocromo, preserva legibilidad de combate */
   .night-mode {
     filter: sepia(1) hue-rotate(-50deg) saturate(2.5) brightness(0.85);
   }
 
-  /* Daltonico: deuteranopia-friendly. Hostiles -> magenta, neutrales -> azul */
   .colorblind-mode {
-    --threat-hostile-cb: #d81b60;
-    --threat-friend-cb: #1e88e5;
+    --threat-hostile-cb: #e0408a;
+    --threat-friend-cb: #42a5f5;
   }
   .colorblind-mode [data-classification='HOSTIL_CONFIRMADO'],
   .colorblind-mode [data-classification='AMENAZA_PROBABLE'] {
     color: var(--threat-hostile-cb) !important;
+  }
+  .colorblind-mode [data-classification='MILITAR_AMIGO'] {
+    color: var(--threat-friend-cb) !important;
+  }
+  .colorblind-mode [data-threat-variant='hostile'] {
+    color: var(--threat-hostile-cb) !important;
+    border-color: var(--threat-hostile-cb) !important;
+  }
+  .colorblind-mode [data-threat-variant='friend'] {
+    color: var(--threat-friend-cb) !important;
+    border-color: var(--threat-friend-cb) !important;
+  }
+
+  .night-mode.colorblind-mode {
+    --threat-hostile-cb: #ff6b9d;
+    --threat-friend-cb: #64b5f6;
+  }
+
+  .emergency-mode {
+    box-shadow: inset 0 0 0 3px rgba(255, 56, 56, 0.6);
+  }
+  .emergency-mode::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ff3838;
+    z-index: 9999;
+    animation: blink-critical 0.8s steps(2, jump-none) infinite;
   }
 }
 

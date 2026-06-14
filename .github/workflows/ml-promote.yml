@@ -33,14 +33,20 @@ jobs:
         env:
           MODEL_NAME: ${{ github.event.inputs.model_name }}
           VERSION: ${{ github.event.inputs.version }}
+          MODEL_SIGNING_PRIVATE_KEY: ${{ secrets.MODEL_SIGNING_PRIVATE_KEY }}
         run: |
           pip install -e edge-llm
+          pip install cryptography
           cat > /tmp/sign_bundle.py << 'PYEOF'
+          import os, sys
           from pathlib import Path
-          import hashlib, json
-          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
           from cryptography.hazmat.primitives import serialization
-          key = Ed25519PrivateKey.generate()
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          pem = os.environ.get("MODEL_SIGNING_PRIVATE_KEY", "")
+          if not pem:
+              print("ERROR: MODEL_SIGNING_PRIVATE_KEY secret is not configured", file=sys.stderr)
+              sys.exit(1)
+          key = Ed25519PrivateKey.from_private_key(pem.encode())
           pubkey = key.public_key()
           bundle_dir = Path('models/bundle')
           bundle_dir.mkdir(parents=True, exist_ok=True)

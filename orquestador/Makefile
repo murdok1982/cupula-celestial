@@ -53,6 +53,8 @@ migrate:
 	docker compose exec postgres psql -U cupula -d cupula -f /migrations/003_audit_log.sql || true
 	docker compose exec postgres psql -U cupula -d cupula -f /migrations/004_users_roles.sql || true
 	docker compose exec postgres psql -U cupula -d cupula -f /migrations/005_session_tokens.sql || true
+	docker compose exec postgres psql -U cupula -d cupula -f /migrations/006_webauthn_credentials.sql || true
+	docker compose exec postgres psql -U cupula -d cupula -f /migrations/007_audit_batches.sql || true
 
 test-rust:
 	cargo test --workspace

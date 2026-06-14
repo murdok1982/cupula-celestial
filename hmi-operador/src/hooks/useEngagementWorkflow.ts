@@ -55,7 +55,6 @@ export function useEngagementWorkflow(): UseEngagementWorkflowReturn {
   const [timeline, setTimeline] = useState<EngagementWorkflowEvent[]>([]);
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remainingTime, setRemainingTime] = useState(0);
-  const timerRef = useRef<number | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
 

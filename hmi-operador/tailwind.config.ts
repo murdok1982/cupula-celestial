@@ -6,21 +6,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tema tactico oscuro
         bg: {
           base: '#0a0e14',
-          panel: '#1a2332',
-          elevated: '#212c3d',
-          hover: '#2a3650',
+          panel: '#11161d',
+          elevated: '#1a2129',
+          hover: '#1f2730',
         },
         border: {
-          DEFAULT: '#2a3650',
-          strong: '#3d4a66',
+          DEFAULT: '#2a3340',
+          strong: '#3d4a5c',
         },
         text: {
           primary: '#e6edf3',
-          secondary: '#8b95a8',
-          muted: '#5a6478',
+          secondary: '#b0bac9',
+          muted: '#838d9c',
         },
         // Colores tacticos NATO APP-6
         threat: {
@@ -56,7 +55,7 @@ const config: Config = {
           foreground: '#0a0e14',
         },
         secondary: {
-          DEFAULT: '#1a2332',
+          DEFAULT: '#11161d',
           foreground: '#e6edf3',
         },
         destructive: {
@@ -64,11 +63,11 @@ const config: Config = {
           foreground: '#ffffff',
         },
         muted: {
-          DEFAULT: '#1a2332',
-          foreground: '#8b95a8',
+          DEFAULT: '#11161d',
+          foreground: '#b0bac9',
         },
         card: {
-          DEFAULT: '#1a2332',
+          DEFAULT: '#11161d',
           foreground: '#e6edf3',
         },
       },

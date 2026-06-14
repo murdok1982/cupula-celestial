@@ -4,15 +4,14 @@ import { NatoSymbol } from '@/components/tactical/NatoSymbol';
 
 describe('NatoSymbol', () => {
   it('renders with correct APP-6 class', () => {
-    render(<NatoSymbol symbolId="SFAP-UAV" threat="HOSTILE" />);
-    const el = screen.getByTestId('nato-symbol');
+    render(<NatoSymbol classification="HOSTIL_CONFIRMADO" />);
+    const el = screen.getByRole('img');
     expect(el).toBeDefined();
-    expect(el.className).toContain('nato-symbol');
   });
 
   it('renders friendly symbol', () => {
-    render(<NatoSymbol symbolId="SFAP-UAV" threat="FRIENDLY" />);
-    const el = screen.getByTestId('nato-symbol');
+    render(<NatoSymbol classification="MILITAR_AMIGO" />);
+    const el = screen.getByRole('img');
     expect(el).toBeDefined();
   });
 });

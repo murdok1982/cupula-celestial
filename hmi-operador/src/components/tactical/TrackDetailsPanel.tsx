@@ -107,7 +107,6 @@ function AltitudeChart({ track }: { track: Track }): JSX.Element {
   const samples = useMemo(() => {
     const points: Array<{ label: string; alt: number; speed: number }> = [];
     for (let i = 0; i < 30; i += 5) {
-      const ts = now - (30 - i) * 1000;
       const altJitter = track.position.alt_m + Math.sin(i * 0.5) * 20;
       const speedJitter = track.speed_ms + Math.cos(i * 0.3) * 2;
       points.push({

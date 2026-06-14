@@ -238,7 +238,7 @@ pub async fn blacklist_jti(
 pub async fn is_jti_blacklisted(redis: &redis::Client, jti: &str) -> bool {
     let mut conn = match redis.get_multiplexed_async_connection().await {
         Ok(c) => c,
-        Err(_) => return false, // si Redis está caído, fail-open en PoC; en prod fail-closed
+        Err(_) => return true,
     };
     let key = format!("jwt:blacklist:{}", jti);
     let v: redis::RedisResult<Option<String>> = conn.get(&key).await;

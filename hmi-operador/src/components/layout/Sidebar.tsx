@@ -18,6 +18,7 @@ export function Sidebar({ side, children, width = 'w-[360px]', ariaLabel }: Prop
         width,
         side === 'left' ? 'border-r' : 'border-l',
       )}
+      data-testid={`sidebar-${side}`}
     >
       {children}
     </aside>

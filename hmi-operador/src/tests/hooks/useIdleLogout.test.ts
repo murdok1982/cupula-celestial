@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useIdleLogout } from '@/hooks/useIdleLogout';
 import { useAuthStore } from '@/store/authStore';

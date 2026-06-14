@@ -1,9 +1,5 @@
-/**
- * Dialogo MODAL BLOQUEANTE de autorizacion de engagement.
- * Implementa doble factor: PIN (6 digitos) + WebAuthn (FIDO2).
- * Timeout 30s segun MIL-STD-1472.
- */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -52,6 +48,7 @@ export function EngagementAuthDialog({
   onClose,
   onConfirm,
 }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('pin');
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [reason, setReason] = useState<string | undefined>(undefined);
@@ -63,7 +60,6 @@ export function EngagementAuthDialog({
     defaultValues: { pin: '', reason: '' },
   });
 
-  // Reset al abrir
   useEffect(() => {
     if (open) {
       setStep('pin');
@@ -74,7 +70,6 @@ export function EngagementAuthDialog({
     }
   }, [open, form]);
 
-  // Countdown 30s
   useEffect(() => {
     if (!open) return undefined;
     const deadline = Date.now() + env.VITE_AUTH_DIALOG_TIMEOUT_MS;
@@ -103,7 +98,7 @@ export function EngagementAuthDialog({
     async (assertion: Fido2CompleteRequest) => {
       if (!pinHash || !decision) {
         setStep('error');
-        setErrorMsg('Falta hash de PIN o decision');
+        setErrorMsg(t('engagement.missingPinOrDecision'));
         return;
       }
       setStep('submitting');
@@ -116,26 +111,26 @@ export function EngagementAuthDialog({
         });
         onClose();
       } catch (e) {
-        const err = e instanceof Error ? e.message : 'Error al confirmar';
+        const err = e instanceof Error ? e.message : t('engagement.confirmError');
         setErrorMsg(err);
         setStep('error');
       }
     },
-    [pinHash, decision, onConfirm, onClose, reason],
+    [pinHash, decision, onConfirm, onClose, reason, t],
   );
 
   const decisionLabel = useMemo(() => {
     switch (decision) {
       case 'AUTHORIZE':
-        return 'AUTORIZAR ENGAGEMENT';
+        return t('engagement.authorizeTitle');
       case 'REJECT':
-        return 'RECHAZAR ENGAGEMENT';
+        return t('engagement.rejectTitle');
       case 'DEFER':
-        return 'DIFERIR DECISION';
+        return t('engagement.deferTitle');
       default:
         return '';
     }
-  }, [decision]);
+  }, [decision, t]);
 
   if (!recommendation || !decision) return null;
 
@@ -145,7 +140,6 @@ export function EngagementAuthDialog({
         className="max-w-xl"
         hideClose
         onEscapeKeyDown={(e) => {
-          // Permite Esc, cumple WCAG 2.1.2 No Keyboard Trap
           e.preventDefault();
           onClose();
         }}
@@ -157,24 +151,23 @@ export function EngagementAuthDialog({
             {decisionLabel}
           </DialogTitle>
           <DialogDescription id="engagement-auth-desc">
-            Confirmacion doble factor obligatoria. Toda accion queda registrada.
+            {t('engagement.dualFactorDesc')}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Resumen de la accion */}
         <div className="border border-border bg-bg-base rounded-md p-3 font-mono text-tactical-sm space-y-1">
           <div>
-            <span className="text-text-muted">Pista:</span>{' '}
+            <span className="text-text-muted">{t('engagement.track')}</span>{' '}
             <span className="text-text-primary font-bold">{recommendation.track_id}</span>
           </div>
           <div>
-            <span className="text-text-muted">Accion LLM:</span>{' '}
+            <span className="text-text-muted">{t('engagement.llmAction')}</span>{' '}
             <span className="text-accent-cyan font-bold">
               {recommendationLabel(recommendation.recommendation)}
             </span>
           </div>
           <div>
-            <span className="text-text-muted">Decision:</span>{' '}
+            <span className="text-text-muted">{t('engagement.decision')}</span>{' '}
             <span
               className={cn(
                 'font-bold',
@@ -188,7 +181,7 @@ export function EngagementAuthDialog({
           </div>
           {decision === 'AUTHORIZE' && (
             <div>
-              <span className="text-text-muted">Interceptores:</span>{' '}
+              <span className="text-text-muted">{t('engagement.interceptors')}</span>{' '}
               <span className="text-text-primary">
                 {recommendation.interceptors_proposed.join(', ')}
               </span>
@@ -196,12 +189,11 @@ export function EngagementAuthDialog({
           )}
         </div>
 
-        {/* Countdown */}
         <div
           className="flex items-center justify-between text-tactical-xs font-mono"
           aria-live="polite"
         >
-          <span className="text-text-muted uppercase tracking-wider">Tiempo restante</span>
+          <span className="text-text-muted uppercase tracking-wider">{t('engagement.timeRemaining')}</span>
           <span
             className={cn(
               'font-bold tabular-nums',
@@ -216,7 +208,7 @@ export function EngagementAuthDialog({
         {step === 'pin' && (
           <form onSubmit={form.handleSubmit(handlePinSubmit)} className="space-y-3" noValidate>
             <div className="space-y-1">
-              <Label htmlFor="auth-pin">PIN del operador (6 digitos)</Label>
+              <Label htmlFor="auth-pin">{t('engagement.pinLabel')}</Label>
               <Input
                 id="auth-pin"
                 type="password"
@@ -238,7 +230,7 @@ export function EngagementAuthDialog({
 
             {decision !== 'AUTHORIZE' && (
               <div className="space-y-1">
-                <Label htmlFor="auth-reason">Motivo (obligatorio para rechazo/diferir)</Label>
+                <Label htmlFor="auth-reason">{t('engagement.reasonLabel')}</Label>
                 <Input
                   id="auth-reason"
                   type="text"
@@ -251,10 +243,10 @@ export function EngagementAuthDialog({
 
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={onClose}>
-                Cancelar
+                {t('actions.cancel')}
               </Button>
               <Button type="submit" variant="tactical" data-testid="auth-pin-submit">
-                Continuar a MFA
+                {t('engagement.continueMfa')}
               </Button>
             </DialogFooter>
           </form>
@@ -263,15 +255,15 @@ export function EngagementAuthDialog({
         {step === 'fido2' && (
           <div className="space-y-3">
             <Alert variant="info">
-              <AlertTitle>Paso 2/2 - Token fisico FIDO2</AlertTitle>
+              <AlertTitle>{t('engagement.fido2Title')}</AlertTitle>
               <AlertDescription>
-                Inserte el token, pulse el sensor biometrico o use la llave de seguridad.
+                {t('engagement.fido2Desc')}
               </AlertDescription>
             </Alert>
             <MfaFido2 autoStart onComplete={handleFido2Complete} />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={onClose}>
-                Cancelar
+                {t('actions.cancel')}
               </Button>
             </DialogFooter>
           </div>
@@ -279,16 +271,16 @@ export function EngagementAuthDialog({
 
         {step === 'submitting' && (
           <Alert variant="info" aria-live="assertive">
-            <AlertTitle>Procesando...</AlertTitle>
-            <AlertDescription>Enviando autorizacion al gateway. No cierre la ventana.</AlertDescription>
+            <AlertTitle>{t('engagement.processing')}</AlertTitle>
+            <AlertDescription>{t('engagement.processingDesc')}</AlertDescription>
           </Alert>
         )}
 
         {step === 'error' && (
           <Alert variant="critical">
             <AlertTriangle />
-            <AlertTitle>Error de autorizacion</AlertTitle>
-            <AlertDescription>{errorMsg ?? 'Fallo desconocido'}</AlertDescription>
+            <AlertTitle>{t('engagement.authError')}</AlertTitle>
+            <AlertDescription>{errorMsg ?? t('engagement.unknownError')}</AlertDescription>
           </Alert>
         )}
       </DialogContent>

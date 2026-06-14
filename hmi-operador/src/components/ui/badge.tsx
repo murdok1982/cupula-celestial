@@ -20,8 +20,11 @@ const badgeVariants = cva(
   },
 );
 
+const THREAT_VARIANTS = new Set(['hostile', 'friend', 'neutral', 'unknown']);
+
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
 
 export function Badge({ className, variant, ...props }: BadgeProps): JSX.Element {
-  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
+  const threatAttr = variant && THREAT_VARIANTS.has(variant) ? { 'data-threat-variant': variant } : {};
+  return <span className={cn(badgeVariants({ variant }), className)} {...threatAttr} {...props} />;
 }

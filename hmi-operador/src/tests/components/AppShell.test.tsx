@@ -14,7 +14,7 @@ describe('AppShell', () => {
   it('renders TopBar and StatusBar', () => {
     render(
       <BrowserRouter>
-        <AppShell />
+        <AppShell><div data-testid="content">Content</div></AppShell>
       </BrowserRouter>
     );
     expect(screen.getByTestId('topbar')).toBeDefined();

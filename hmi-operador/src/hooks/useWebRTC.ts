@@ -161,7 +161,7 @@ export function useWebRTC({ streamId, ws, iceServers }: UseWebRTCOptions): UseWe
       if (caps) {
         const orderedCodecs = codecPreferences
           .map((codec) => caps.codecs.find((c) => c.mimeType === codec))
-          .filter(Boolean) as RTCRtpCodecCapability[];
+          .filter((c): c is NonNullable<ReturnType<typeof caps.codecs.find>> => c != null);
         if (orderedCodecs.length > 0) {
           transceiver.setCodecPreferences(orderedCodecs);
         }

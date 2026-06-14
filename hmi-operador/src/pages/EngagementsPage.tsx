@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { useRecommendationStore } from '@/store/recommendationStore';
 import { cn } from '@/lib/cn';
 
 export function EngagementsPage(): JSX.Element {
+  const { t } = useTranslation();
   const recs = useRecommendations();
   const activeId = useRecommendationStore((s) => s.activeRecommendationId);
 
@@ -14,21 +16,21 @@ export function EngagementsPage(): JSX.Element {
     <div className="flex-1 p-3 overflow-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Historial de recomendaciones ({recs.length})</CardTitle>
+          <CardTitle>{t('engagements.history')} ({recs.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {recs.length === 0 ? (
-            <p className="text-text-muted text-tactical-sm font-mono">Sin recomendaciones.</p>
+            <p className="text-text-muted text-tactical-sm font-mono">{t('engagements.noRecommendations')}</p>
           ) : (
             <table className="w-full text-tactical-sm font-mono" role="table">
               <thead className="text-text-muted text-tactical-xs uppercase tracking-wider">
                 <tr className="text-left border-b border-border">
-                  <th className="p-2">Pista</th>
-                  <th className="p-2">Accion</th>
-                  <th className="p-2">Pk</th>
-                  <th className="p-2">Colateral</th>
-                  <th className="p-2">Estado</th>
-                  <th className="p-2">Emitida</th>
+                  <th className="p-2">{t('engagements.track')}</th>
+                  <th className="p-2">{t('engagements.action')}</th>
+                  <th className="p-2">{t('engagements.pk')}</th>
+                  <th className="p-2">{t('engagements.collateral')}</th>
+                  <th className="p-2">{t('engagements.status')}</th>
+                  <th className="p-2">{t('engagements.issued')}</th>
                 </tr>
               </thead>
               <tbody>

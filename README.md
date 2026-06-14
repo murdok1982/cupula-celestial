@@ -21,6 +21,14 @@
   <a href="#francais">Français</a>
 </p>
 
+<p align="center">
+  <img src="docs/images/kill-chain.svg" alt="Kill Chain Cúpula Celestial" width="850"/>
+</p>
+
+<p align="center">
+  <img src="docs/images/architecture.svg" alt="Arquitectura C4ISR Cúpula Celestial" width="850"/>
+</p>
+
 ---
 
 <a name="espanol"></a>

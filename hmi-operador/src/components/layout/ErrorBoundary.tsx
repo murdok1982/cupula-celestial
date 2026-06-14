@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo): void {
+  componentDidCatch(_error: Error, info: ErrorInfo): void {
     this.setState({ errorInfo: info });
 
     // Log structured error to connectionStore

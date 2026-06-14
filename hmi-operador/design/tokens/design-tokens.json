@@ -11,7 +11,7 @@
     "fg": {
       "primary":   { "value": "#E6EDF3", "comment": "Texto principal — contraste 14.8:1 vs bg.base (AAA)." },
       "secondary": { "value": "#B0BAC9", "comment": "Etiquetas y metadatos — 9.2:1 vs bg.base (AAA)." },
-      "tertiary":  { "value": "#6E7889", "comment": "Texto deshabilitado, timestamps secundarios — 4.8:1 (AA)." },
+      "tertiary":  { "value": "#838D9C", "comment": "Texto deshabilitado, timestamps secundarios — 5.76:1 vs bg.base, 4.84:1 vs bg.elevated (AA en todos los fondos)." },
       "inverse":   { "value": "#0A0E14", "comment": "Texto sobre fondos claros (primary buttons, badges saturados)." }
     },
     "border": {

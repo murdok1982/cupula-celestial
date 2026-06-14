@@ -5,8 +5,10 @@ import { TrackRow } from '@/components/tactical/TrackRow';
 import { TrackDetailsPanel } from '@/components/tactical/TrackDetailsPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from 'react-i18next';
 
 export function TrackListPage(): JSX.Element {
+  const { t } = useTranslation();
   const tracks = useTracks();
   const selected = useSelectedTrack();
 
@@ -14,11 +16,11 @@ export function TrackListPage(): JSX.Element {
     <div className="flex-1 grid grid-cols-[1fr_400px] gap-3 p-3 overflow-hidden">
       <Card className="flex flex-col overflow-hidden">
         <CardHeader>
-          <CardTitle>Pistas activas ({tracks.length})</CardTitle>
+          <CardTitle>{t('tracks.activeTracks')} ({tracks.length})</CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <ul aria-label="Lista detallada de pistas" className="divide-y divide-border">
+            <ul aria-label={t('tracks.ariaList')} className="divide-y divide-border">
               {tracks.map((track) => (
                 <li key={track.track_id}>
                   <TrackRow

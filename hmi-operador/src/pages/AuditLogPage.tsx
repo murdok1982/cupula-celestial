@@ -53,7 +53,7 @@ export function AuditLogPage(): JSX.Element {
               </Button>
               <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
                 <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} aria-hidden />
-                Refrescar
+                {t('audit.refresh')}
               </Button>
             </div>
           </div>
@@ -66,7 +66,7 @@ export function AuditLogPage(): JSX.Element {
                 {verifyResult.ok ? t('audit.chainOk') : t('audit.chainBroken', { seq: verifyResult.broken_at_seq })}
               </AlertTitle>
               <AlertDescription>
-                {verifyResult.message} ({verifyResult.total_events} eventos)
+                {verifyResult.message} ({t('audit.eventsCount', { count: verifyResult.total_events })})
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -75,19 +75,19 @@ export function AuditLogPage(): JSX.Element {
 
       <Card className="flex-1 overflow-hidden flex flex-col">
         <CardHeader>
-          <CardTitle>Eventos ({data?.total ?? 0})</CardTitle>
+          <CardTitle>{t('audit.events')} ({data?.total ?? 0})</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full">
             <table className="w-full text-tactical-xs font-mono" role="table">
               <thead className="text-text-muted uppercase tracking-wider sticky top-0 bg-bg-panel">
                 <tr className="text-left border-b border-border">
-                  <th className="p-2">Seq</th>
-                  <th className="p-2">Hora Zulu</th>
-                  <th className="p-2">Evento</th>
-                  <th className="p-2">Actor</th>
-                  <th className="p-2">Rol</th>
-                  <th className="p-2">Hash</th>
+                  <th className="p-2">{t('audit.seq')}</th>
+                  <th className="p-2">{t('audit.zuluTime')}</th>
+                  <th className="p-2">{t('audit.event')}</th>
+                  <th className="p-2">{t('audit.actor')}</th>
+                  <th className="p-2">{t('audit.role')}</th>
+                  <th className="p-2">{t('audit.hash')}</th>
                 </tr>
               </thead>
               <tbody>

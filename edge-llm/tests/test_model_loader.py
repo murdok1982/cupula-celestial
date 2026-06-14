@@ -41,6 +41,7 @@ def _build_bundle(tmp: Path, sk: Ed25519PrivateKey, model_data: bytes, manifest_
         "signed_by": "tests",
         "signed_at": "2026-01-01T00:00:00Z",
         "trust_level": "development",
+        "valid_until": "2099-12-31T23:59:59Z",
     }
     if manifest_overrides:
         manifest.update(manifest_overrides)

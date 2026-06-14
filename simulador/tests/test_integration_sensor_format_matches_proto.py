@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from app.radar_sim import reading_for
-from app.eo_ir_sim import eo_ir_reading
-from app.rf_sim import rf_reading
+from app.eo_ir_sim import reading_for as eo_ir_reading_for
+from app.rf_sim import reading_for as rf_reading_for
 from app.radar_sim import TargetKinematic
 
 
@@ -18,12 +18,14 @@ def test_radar_output_has_expected_fields():
 
 
 def test_eo_ir_output_has_expected_fields():
-    reading = eo_ir_reading(40.416, -3.704, 800.0)
+    target = TargetKinematic(40.416, -3.704, 800.0, 225, 60, -15, "rotary")
+    reading = eo_ir_reading_for(target)
     required = {"sensor_id", "sensor_type", "timestamp", "position", "detection", "snr_db", "quality"}
     assert required.issubset(reading.keys()), f"EO/IR campos faltantes: {required - reading.keys()}"
 
 
 def test_rf_output_has_expected_fields():
-    reading = rf_reading(40.416, -3.704, 800.0, freq_mhz=2500.0, power_dbm=10.0)
+    target = TargetKinematic(40.416, -3.704, 800.0, 225, 60, -15, "rotary")
+    reading = rf_reading_for(target)
     required = {"sensor_id", "sensor_type", "timestamp", "position", "detection", "snr_db", "quality"}
     assert required.issubset(reading.keys()), f"RF campos faltantes: {required - reading.keys()}"

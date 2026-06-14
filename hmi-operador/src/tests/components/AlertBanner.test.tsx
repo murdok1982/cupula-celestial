@@ -1,31 +1,36 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AlertBanner } from '@/components/tactical/AlertBanner';
+import { useAlertStore } from '@/store/alertStore';
 
 describe('AlertBanner', () => {
+  beforeEach(() => {
+    useAlertStore.getState().clear();
+  });
+
   it('renders critical alert with red styling', () => {
-    render(
-      <AlertBanner
-        alertId="A-1"
-        severity="CRITICAL"
-        message="Threat detected"
-        timestamp="2026-01-15T12:00:00Z"
-      />
-    );
-    expect(screen.getByText('CRITICAL')).toBeDefined();
+    useAlertStore.getState().push({
+      alert_id: 'A-1',
+      severity: 'CRITICAL',
+      title: 'Threat detected',
+      message: 'Threat detected',
+      ts_ms: Date.now(),
+      ack_required: true,
+    });
+    render(<AlertBanner />);
     expect(screen.getByText('Threat detected')).toBeDefined();
   });
 
   it('renders info alert with blue styling', () => {
-    render(
-      <AlertBanner
-        alertId="A-2"
-        severity="INFO"
-        message="System OK"
-        timestamp="2026-01-15T12:00:00Z"
-      />
-    );
-    expect(screen.getByText('INFO')).toBeDefined();
+    useAlertStore.getState().push({
+      alert_id: 'A-2',
+      severity: 'INFO',
+      title: 'System OK',
+      message: 'System OK',
+      ts_ms: Date.now(),
+      ack_required: false,
+    });
+    render(<AlertBanner />);
     expect(screen.getByText('System OK')).toBeDefined();
   });
 });

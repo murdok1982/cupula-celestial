@@ -7,7 +7,7 @@ describe('Sidebar', () => {
   it('renders left sidebar', () => {
     render(
       <BrowserRouter>
-        <Sidebar side="left" />
+        <Sidebar side="left"><div>Left content</div></Sidebar>
       </BrowserRouter>
     );
     const sidebar = screen.getByTestId('sidebar-left');
@@ -17,7 +17,7 @@ describe('Sidebar', () => {
   it('renders right sidebar', () => {
     render(
       <BrowserRouter>
-        <Sidebar side="right" />
+        <Sidebar side="right"><div>Right content</div></Sidebar>
       </BrowserRouter>
     );
     const sidebar = screen.getByTestId('sidebar-right');

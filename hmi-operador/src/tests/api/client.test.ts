@@ -22,7 +22,7 @@ describe('api client', () => {
 
     await apiRequest('/test', { baseUrl: 'http://localhost:8080' });
     const call = mockFetch.mock.calls[0];
-    expect(call[1].headers['Authorization']).toBe('Bearer test-token');
+    expect(call?.[1]?.headers?.['Authorization']).toBe('Bearer test-token');
   });
 
   it('uses timeout of 10s by default', async () => {
@@ -35,7 +35,7 @@ describe('api client', () => {
     vi.stubGlobal('fetch', mockFetch);
 
     await apiRequest('/test', { baseUrl: 'http://localhost:8080' });
-    const controller = mockFetch.mock.calls[0][1].signal;
+    const controller = mockFetch.mock.calls[0]?.[1]?.signal;
     expect(controller).toBeDefined();
   });
 

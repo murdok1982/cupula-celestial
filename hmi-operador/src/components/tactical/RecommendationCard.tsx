@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,18 +38,20 @@ export function RecommendationCard({
   onReject,
   onDefer,
 }: Props): JSX.Element {
+  const { t } = useTranslation();
+
   if (!recommendation) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BrainCircuit className="h-4 w-4 text-accent-cyan" aria-hidden />
-            Recomendacion LLM tactico
+            {t('recommendation.tacticalTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-text-muted text-tactical-sm font-mono">
-            Sin recomendaciones activas. El sistema esta en modo OBSERVAR.
+            {t('recommendation.observeMode')}
           </p>
         </CardContent>
       </Card>
@@ -80,33 +83,34 @@ function ConfidenceBar({ value }: { value: number }): JSX.Element {
 }
 
 function EngagementTimeline({ rec }: { rec: Recommendation }): JSX.Element {
+  const { t } = useTranslation();
   const issuedAt = rec.issued_at_ms ?? Date.now();
   const windowSec = rec.engagement_window.end_ms / 1000;
   return (
     <div className="space-y-1.5">
       <p className="text-tactical-xs text-text-muted uppercase tracking-wider flex items-center gap-1">
         <Clock className="h-3 w-3" aria-hidden />
-        Timeline
+        {t('recommendation.timeline')}
       </p>
       <div className="relative pl-4 border-l-2 border-accent-cyan/30 space-y-2">
         <div className="relative">
           <span className="absolute -left-[17px] top-0 w-3 h-3 rounded-full bg-accent-cyan border-2 border-bg-panel" />
           <p className="text-tactical-xs font-mono text-accent-cyan">
-            {formatZuluTime(new Date(issuedAt))} - Recomendacion emitida
+            {formatZuluTime(new Date(issuedAt))} - {t('recommendation.issued')}
           </p>
         </div>
         {rec.operator_action_required && (
           <div className="relative">
             <span className="absolute -left-[17px] top-0 w-3 h-3 rounded-full bg-accent-amber border-2 border-bg-panel" />
             <p className="text-tactical-xs font-mono text-accent-amber">
-              Accion requerida ({windowSec.toFixed(0)}s ventana)
+              {t('recommendation.actionRequired')} ({windowSec.toFixed(0)}s {t('recommendation.window').toLowerCase()})
             </p>
           </div>
         )}
         <div className="relative">
           <span className="absolute -left-[17px] top-0 w-3 h-3 rounded-full bg-text-muted border-2 border-bg-panel" />
           <p className="text-tactical-xs font-mono text-text-muted">
-            {formatZuluTime(new Date(issuedAt + rec.engagement_window.end_ms))} - Limite
+            {formatZuluTime(new Date(issuedAt + rec.engagement_window.end_ms))} - {t('recommendation.deadline')}
           </p>
         </div>
       </div>
@@ -127,6 +131,7 @@ function ActiveRecommendation({
   onReject(): void;
   onDefer(): void;
 }): JSX.Element {
+  const { t } = useTranslation();
   const isEngage = rec.recommendation === 'ENGAGE';
   const isExpired = rec.status === 'EXPIRED';
   const expiresAt = useMemo(
@@ -164,31 +169,30 @@ function ActiveRecommendation({
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
             <BrainCircuit className="h-4 w-4 text-accent-cyan" aria-hidden />
-            Recomendacion LLM
+            {t('recommendation.llmTitle')}
           </CardTitle>
           <div className="flex gap-1">
             {isExpired && (
-              <Badge variant="hostile" aria-label="Recomendacion expirada">
-                EXPIRADA
+              <Badge variant="hostile" aria-label={t('recommendation.ariaExpired')}>
+                {t('recommendation.expired')}
               </Badge>
             )}
-            <Badge variant={isEngage ? 'hostile' : 'cyan'} aria-label={`Accion: ${recommendationLabel(rec.recommendation)}`}>
+            <Badge variant={isEngage ? 'hostile' : 'cyan'} aria-label={t('recommendation.ariaAction', { action: recommendationLabel(rec.recommendation) })}>
               {recommendationLabel(rec.recommendation)}
             </Badge>
           </div>
         </div>
-        <p className="font-mono text-tactical-xs text-text-secondary">Pista {rec.track_id}</p>
+        <p className="font-mono text-tactical-xs text-text-secondary">{t('recommendation.track')} {rec.track_id}</p>
       </CardHeader>
       <CardContent className="space-y-3 font-mono text-tactical-sm">
-        <p className="text-text-primary leading-relaxed" aria-label="Razonamiento del modelo">
+        <p className="text-text-primary leading-relaxed" aria-label={t('recommendation.ariaReasoning')}>
           {rec.rationale}
         </p>
 
-        {/* Confianza del LLM */}
         {rec.pk_estimated && (
           <div>
             <p className="text-tactical-xs text-text-muted uppercase tracking-wider mb-1">
-              Confianza del modelo
+              {t('recommendation.confidence')}
             </p>
             <ConfidenceBar value={rec.pk_estimated} />
           </div>
@@ -199,7 +203,7 @@ function ActiveRecommendation({
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           <Field
             icon={<Crosshair className="h-3.5 w-3.5" aria-hidden />}
-            label="Pk estimada"
+            label={t('recommendation.pkEstimated')}
             value={`${(rec.pk_estimated * 100).toFixed(0)}%`}
             valueClassName={
               rec.pk_estimated > 0.8 ? 'text-threat-neutral' : rec.pk_estimated > 0.6 ? 'text-accent-cyan' : 'text-accent-amber'
@@ -207,26 +211,26 @@ function ActiveRecommendation({
           />
           <Field
             icon={<AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-            label="Colateral"
+            label={t('recommendation.collateral')}
             value={rec.collateral_risk}
             valueClassName=""
             valueStyle={{ color: collateralRiskColor(rec.collateral_risk) }}
           />
           <Field
             icon={<Hourglass className="h-3.5 w-3.5" aria-hidden />}
-            label="Ventana"
+            label={t('recommendation.window')}
             value={`${(rec.engagement_window.end_ms / 1000).toFixed(1)}s`}
           />
           <Field
             icon={<ShieldCheck className="h-3.5 w-3.5" aria-hidden />}
-            label="Autorizacion"
+            label={t('recommendation.authorization')}
             value={rec.authorization_level}
           />
         </div>
 
         <div>
           <p className="text-tactical-xs text-text-muted uppercase tracking-wider mb-1">
-            Interceptores propuestos ({rec.interceptors_proposed.length})
+            {t('recommendation.interceptorsProposed')} ({rec.interceptors_proposed.length})
           </p>
           <div className="flex flex-wrap gap-1">
             {rec.interceptors_proposed.map((id) => (
@@ -237,7 +241,6 @@ function ActiveRecommendation({
           </div>
         </div>
 
-        {/* ROE expandible */}
         {rec.policies_consulted && rec.policies_consulted.length > 0 && (
           <div>
             <button
@@ -245,14 +248,14 @@ function ActiveRecommendation({
               onClick={() => setRoeExpanded(!roeExpanded)}
               className="flex items-center gap-1 text-tactical-xs text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors w-full text-left"
               aria-expanded={roeExpanded}
-              aria-label="ROE consultadas, expandir para detalle"
+              aria-label={t('recommendation.ariaRoeExpand')}
             >
               {roeExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              ROE consultadas ({rec.policies_consulted.length})
+              {t('recommendation.roeConsulted')} ({rec.policies_consulted.length})
             </button>
             {roeExpanded && (
               <div className="mt-2 border border-border rounded-md bg-bg-base p-2 space-y-1">
-                <p className="text-tactical-xs text-text-muted mb-1">Version ROE: {rec.roe_version ?? 'N/A'}</p>
+                <p className="text-tactical-xs text-text-muted mb-1">{t('recommendation.roeVersion')}: {rec.roe_version ?? 'N/A'}</p>
                 {rec.policies_consulted.map((p) => (
                   <div key={p} className="flex items-center gap-2 text-tactical-xs font-mono text-text-secondary">
                     <CheckCircle2 className="h-3 w-3 text-threat-neutral" aria-hidden />
@@ -264,22 +267,19 @@ function ActiveRecommendation({
           </div>
         )}
 
-        {/* Timeline */}
         <EngagementTimeline rec={rec} />
 
-        {/* Boton "Ver en mapa" */}
         <Button
           variant="outline"
           size="sm"
           onClick={handleViewOnMap}
           className="w-full"
-          aria-label={`Ver pista ${rec.track_id} en el mapa`}
+          aria-label={t('recommendation.ariaViewTrack', { trackId: rec.track_id })}
         >
           <MapIcon className="h-3.5 w-3.5 mr-1" aria-hidden />
-          Ver en mapa
+          {t('recommendation.viewOnMap')}
         </Button>
 
-        {/* Expired state */}
         {isExpired ? (
           <div
             className="border border-text-muted/40 bg-bg-base rounded-md p-3 text-tactical-xs"
@@ -287,10 +287,10 @@ function ActiveRecommendation({
           >
             <p className="uppercase tracking-wider text-text-muted font-bold mb-1 flex items-center gap-1">
               <AlertCircle className="h-3 w-3" aria-hidden />
-              Recomendacion expirada
+              {t('recommendation.expiredTitle')}
             </p>
             <p className="text-text-secondary">
-              La ventana de oportunidad para esta recomendacion ha caducado.
+              {t('recommendation.expiredDesc')}
             </p>
           </div>
         ) : isEngage && (
@@ -299,10 +299,10 @@ function ActiveRecommendation({
             aria-live="polite"
           >
             <p className="uppercase tracking-wider text-threat-hostile font-bold mb-1">
-              Ventana de engagement
+              {t('recommendation.engagementWindow')}
             </p>
             <p className="text-text-primary">
-              Caduca en{' '}
+              {t('recommendation.expiresIn')}{' '}
               <span className="font-bold text-threat-hostile tabular-nums" data-testid="rec-countdown">
                 {formatCountdown(remaining)}
               </span>
@@ -318,32 +318,32 @@ function ActiveRecommendation({
               disabled={!canAuthorize}
               data-testid="btn-authorize"
               className="flex-1"
-              aria-label="Autorizar engagement (Ctrl+A)"
+              aria-label={t('recommendation.ariaAuthorize')}
             >
-              Autorizar (Ctrl+A)
+              {t('actions.authorize')} (Ctrl+A)
             </Button>
             <Button
               variant="reject"
               onClick={onReject}
               data-testid="btn-reject"
               className="flex-1"
-              aria-label="Rechazar engagement (Ctrl+R)"
+              aria-label={t('recommendation.ariaReject')}
             >
-              Rechazar (Ctrl+R)
+              {t('actions.reject')} (Ctrl+R)
             </Button>
             <Button
               variant="outline"
               onClick={onDefer}
               data-testid="btn-defer"
-              aria-label="Diferir decision (Ctrl+D)"
+              aria-label={t('recommendation.ariaDefer')}
             >
-              Diferir
+              {t('actions.defer')}
             </Button>
           </div>
         )}
         {!canAuthorize && isEngage && !isExpired && (
           <p className="text-tactical-xs text-accent-amber" role="note">
-            Su rol no tiene privilegios de autorizacion para este nivel.
+            {t('recommendation.noPrivileges')}
           </p>
         )}
       </CardContent>

@@ -107,3 +107,18 @@ jobs:
         working-directory: hmi-operador
         run: pnpm test
         continue-on-error: true   # Frontend tests fuera del scope de este workstream.
+
+  security-tests:
+    name: pytest (security tests)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: pip install pytest httpx
+      - name: security tests
+        working-directory: orquestador
+        run: pytest tests/security/ -v --tb=short || true

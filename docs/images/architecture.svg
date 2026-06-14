@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="'Segoe UI',system-ui,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0a0e14"/><stop offset="100%" stop-color="#111820"/></linearGradient>
+    <linearGradient id="sensor" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3a5c"/><stop offset="100%" stop-color="#0d2137"/></linearGradient>
+    <linearGradient id="c2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a4a2e"/><stop offset="100%" stop-color="#0d2e1a"/></linearGradient>
+    <linearGradient id="eff" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4a1a1a"/><stop offset="100%" stop-color="#2e0d0d"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="900" height="520" fill="url(#bg)"/>
+  <text x="450" y="32" text-anchor="middle" fill="#00ff88" font-size="16" font-weight="bold" filter="url(#glow)">CUPULA CELESTIAL — ARQUITECTURA C4ISR C-UAS</text>
+  <line x1="100" y1="42" x2="800" y2="42" stroke="#00ff88" stroke-width="0.5" opacity="0.4"/>
+  <rect x="40" y="55" width="820" height="120" rx="6" fill="url(#sensor)" stroke="#3a8fd4" stroke-width="1.5" opacity="0.9"/>
+  <text x="60" y="78" fill="#6cb4ee" font-size="13" font-weight="bold">CAPA 1: SENSórica MULTIMODAL</text>
+  <g transform="translate(70,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">Radar AESA</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">Banda X/S</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">Pd≥0.95 @4km</text>
+  </g>
+  <g transform="translate(200,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">RF Sensing</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">Pasivo</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">OcuSync/ELRS</text>
+  </g>
+  <g transform="translate(330,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">EO/IR</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">Gimbal LR</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">Slew-to-cue</text>
+  </g>
+  <g transform="translate(460,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">Acústica</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">Array MEMS</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">8-16 mic</text>
+  </g>
+  <g transform="translate(590,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">Satélite LEO</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">PAZ/Ingenio</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">SAR/EO</text>
+  </g>
+  <g transform="translate(720,90)">
+    <rect width="110" height="60" rx="4" fill="#0d2137" stroke="#3a8fd4" stroke-width="1"/>
+    <text x="55" y="22" text-anchor="middle" fill="#8ec8f0" font-size="10">IFF Mode 5</text>
+    <text x="55" y="36" text-anchor="middle" fill="#5a9ec4" font-size="9">ADS-B</text>
+    <text x="55" y="50" text-anchor="middle" fill="#3a7ea4" font-size="8">Amigo/Enemigo</text>
+  </g>
+  <line x1="450" y1="175" x2="450" y2="195" stroke="#00ff88" stroke-width="2" marker-end="url(#arrow)"/>
+  <polygon points="445,195 450,205 455,195" fill="#00ff88"/>
+  <rect x="40" y="205" width="820" height="130" rx="6" fill="url(#c2)" stroke="#00ff88" stroke-width="1.5" opacity="0.9"/>
+  <text x="60" y="228" fill="#00ff88" font-size="13" font-weight="bold">CAPA 2: ORQUESTADOR C2 (Rust + Python + OPA)</text>
+  <g transform="translate(70,240)">
+    <rect width="130" height="70" rx="4" fill="#0d2e1a" stroke="#00ff88" stroke-width="1"/>
+    <text x="65" y="20" text-anchor="middle" fill="#66ffaa" font-size="10">sensor-ingest</text>
+    <text x="65" y="34" text-anchor="middle" fill="#44cc88" font-size="8">HMAC + Anti-replay</text>
+    <text x="65" y="48" text-anchor="middle" fill="#338866" font-size="8">10k req/min</text>
+    <text x="65" y="62" text-anchor="middle" fill="#226644" font-size="7">:9000</text>
+  </g>
+  <g transform="translate(220,240)">
+    <rect width="130" height="70" rx="4" fill="#0d2e1a" stroke="#00ff88" stroke-width="1"/>
+    <text x="65" y="20" text-anchor="middle" fill="#66ffaa" font-size="10">track-fusion</text>
+    <text x="65" y="34" text-anchor="middle" fill="#44cc88" font-size="8">IMM/JPDAF</text>
+    <text x="65" y="48" text-anchor="middle" fill="#338866" font-size="8">CV/CA/CT Kalman</text>
+    <text x="65" y="62" text-anchor="middle" fill="#226644" font-size="7">:9100</text>
+  </g>
+  <g transform="translate(370,240)">
+    <rect width="130" height="70" rx="4" fill="#0d2e1a" stroke="#00ff88" stroke-width="1"/>
+    <text x="65" y="20" text-anchor="middle" fill="#66ffaa" font-size="10">decision-engine</text>
+    <text x="65" y="34" text-anchor="middle" fill="#44cc88" font-size="8">WTA RL + Húngaro</text>
+    <text x="65" y="48" text-anchor="middle" fill="#338866" font-size="8">LLM táctico RAG</text>
+    <text x="65" y="62" text-anchor="middle" fill="#226644" font-size="7">:8001</text>
+  </g>
+  <g transform="translate(520,240)">
+    <rect width="130" height="70" rx="4" fill="#0d2e1a" stroke="#00ff88" stroke-width="1"/>
+    <text x="65" y="20" text-anchor="middle" fill="#66ffaa" font-size="10">swarm-ctrl</text>
+    <text x="65" y="34" text-anchor="middle" fill="#44cc88" font-size="8">MAVLink2</text>
+    <text x="65" y="48" text-anchor="middle" fill="#338866" font-size="8">Auth dual HMAC+JWT</text>
+    <text x="65" y="62" text-anchor="middle" fill="#226644" font-size="7">:9200</text>
+  </g>
+  <g transform="translate(670,240)">
+    <rect width="160" height="70" rx="4" fill="#0d2e1a" stroke="#00ff88" stroke-width="1"/>
+    <text x="80" y="20" text-anchor="middle" fill="#66ffaa" font-size="10">audit-log + HMI-gw</text>
+    <text x="80" y="34" text-anchor="middle" fill="#44cc88" font-size="8">Merkle + Ed25519 HSM</text>
+    <text x="80" y="48" text-anchor="middle" fill="#338866" font-size="8">WebAuthn FIDO2</text>
+    <text x="80" y="62" text-anchor="middle" fill="#226644" font-size="7">:9300 / :8080</text>
+  </g>
+  <polygon points="445,335 450,345 455,335" fill="#ff4444"/>
+  <line x1="450" y1="335" x2="450" y2="345" stroke="#ff4444" stroke-width="2"/>
+  <rect x="40" y="348" width="820" height="120" rx="6" fill="url(#eff)" stroke="#ff4444" stroke-width="1.5" opacity="0.9"/>
+  <text x="60" y="371" fill="#ff6666" font-size="13" font-weight="bold">CAPA 3: ENJAMBRE INTERCEPTOR (Edge ML)</text>
+  <g transform="translate(100,385)">
+    <rect width="160" height="60" rx="4" fill="#2e0d0d" stroke="#ff4444" stroke-width="1"/>
+    <text x="80" y="20" text-anchor="middle" fill="#ff9999" font-size="10">Jetson Orin Nano</text>
+    <text x="80" y="34" text-anchor="middle" fill="#cc6666" font-size="9">DINOv2 + LoRA</text>
+    <text x="80" y="48" text-anchor="middle" fill="#994444" font-size="8">ONNX INT8 &lt;100ms</text>
+  </g>
+  <g transform="translate(300,385)">
+    <rect width="160" height="60" rx="4" fill="#2e0d0d" stroke="#ff4444" stroke-width="1"/>
+    <text x="80" y="20" text-anchor="middle" fill="#ff9999" font-size="10">Pipeline VLM 3-Stage</text>
+    <text x="80" y="34" text-anchor="middle" fill="#cc6666" font-size="9">YOLO→DINOv2→Moondream</text>
+    <text x="80" y="48" text-anchor="middle" fill="#994444" font-size="8">9 clases C-UAS</text>
+  </g>
+  <g transform="translate(500,385)">
+    <rect width="160" height="60" rx="4" fill="#2e0d0d" stroke="#ff4444" stroke-width="1"/>
+    <text x="80" y="20" text-anchor="middle" fill="#ff9999" font-size="10">Mesh MANET</text>
+    <text x="80" y="34" text-anchor="middle" fill="#cc6666" font-size="9">MAVLink2 cifrado</text>
+    <text x="80" y="48" text-anchor="middle" fill="#994444" font-size="8">OTA firmado Ed25519</text>
+  </g>
+  <g transform="translate(700,385)">
+    <rect width="130" height="60" rx="4" fill="#2e0d0d" stroke="#ff4444" stroke-width="1"/>
+    <text x="65" y="20" text-anchor="middle" fill="#ff9999" font-size="10">Nx Interceptor</text>
+    <text x="65" y="34" text-anchor="middle" fill="#cc6666" font-size="9">Kinetic / Red</text>
+    <text x="65" y="48" text-anchor="middle" fill="#994444" font-size="8">&lt;8000€/unit</text>
+  </g>
+  <text x="450" y="498" text-anchor="middle" fill="#5a6478" font-size="10">FASE 3 — Cobertura tests >70% | mTLS | FIDO2 | Chaos Engineering | MLOps</text>
+  <rect x="40" y="505" width="820" height="1" fill="#00ff88" opacity="0.2"/>
+</svg>

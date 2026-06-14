@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { interceptorsApi } from '@/api/interceptors';
 import { InterceptorStatus } from '@/components/tactical/InterceptorStatus';
@@ -6,6 +7,7 @@ import { useState } from 'react';
 import type { Interceptor } from '@/types/interceptors';
 
 export function InterceptorsPage(): JSX.Element {
+  const { t } = useTranslation();
   const { data } = useQuery<Interceptor[]>({
     queryKey: ['interceptors-full'],
     queryFn: () => interceptorsApi.list(),
@@ -21,9 +23,9 @@ export function InterceptorsPage(): JSX.Element {
       <div className="space-y-3">
         <InterceptorStatus interceptors={interceptors} />
         {interceptors.length > 0 && (
-          <div role="group" aria-label="Seleccionar interceptor para video">
+          <div role="group" aria-label={t('interceptors.selectFeed')}>
             <p className="text-text-muted text-tactical-xs uppercase tracking-wider mb-2">
-              Seleccionar feed
+              {t('interceptors.selectFeed')}
             </p>
             <div className="flex flex-wrap gap-2">
               {interceptors.map((i) => (

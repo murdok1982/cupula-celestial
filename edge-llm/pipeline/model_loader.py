@@ -30,6 +30,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
@@ -56,6 +57,7 @@ class ModelManifest:
     signed_by: str
     signed_at: str
     trust_level: str
+    valid_until: str
 
     @staticmethod
     def from_dict(d: dict) -> "ModelManifest":
@@ -69,6 +71,7 @@ class ModelManifest:
             "signed_by",
             "signed_at",
             "trust_level",
+            "valid_until",
         ]
         missing = [k for k in required if k not in d]
         if missing:
@@ -114,8 +117,12 @@ class SignedModelLoader:
             raise ModelVerificationError(f"manifest.sig no existe en {bundle_dir}")
 
         manifest_bytes = manifest_path.read_bytes()
-        sig_bytes_raw = sig_path.read_bytes().strip()
-        # admite firma hex o binaria
+        sig_bytes_raw = sig_path.read_bytes()
+        try:
+            sig_bytes_raw.decode("ascii")
+            sig_bytes_raw = sig_bytes_raw.strip()
+        except (UnicodeDecodeError, AttributeError):
+            pass
         if len(sig_bytes_raw) == 64:
             sig_bytes = sig_bytes_raw
         elif len(sig_bytes_raw) == 128:
@@ -141,6 +148,13 @@ class SignedModelLoader:
             raise ModelVerificationError(
                 f"sha256 del modelo no coincide: stored={manifest.sha256} computed={computed}"
             )
+
+        try:
+            valid_until = datetime.fromisoformat(manifest.valid_until.replace("Z", "+00:00"))
+            if valid_until < datetime.now(tz=timezone.utc):
+                raise ModelVerificationError("manifest expired: valid_until passed")
+        except ValueError as e:
+            raise ModelVerificationError(f"valid_until timestamp inválido: {e}") from e
 
         log.warning(
             "Modelo VERIFICADO ✓ name=%s version=%s trust=%s signed_by=%s",

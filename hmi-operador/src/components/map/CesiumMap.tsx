@@ -23,13 +23,14 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { env } from '@/env';
 import { useTrackStore } from '@/store/trackStore';
+import { useInterceptorStore, selectActiveInterceptors } from '@/store/interceptorStore';
 import { useMapStore } from './useMapStore';
 import { natoSymbolDataUrl } from '@/lib/nato-symbology';
 import { threatRgba } from '@/lib/threat';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Layers, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/cn';
+
 
 const HOME_LON = -3.7038;
 const HOME_LAT = 40.4168;
@@ -54,6 +55,8 @@ export function CesiumMap(): JSX.Element {
   const viewerRef = useRef<Viewer | null>(null);
   const trackEntitiesRef = useRef<Map<string, Entity>>(new Map());
   const leaderLineEntitiesRef = useRef<Map<string, Entity>>(new Map());
+  const interceptorEntitiesRef = useRef<Map<string, Entity>>(new Map());
+  const engagementLineEntitiesRef = useRef<Map<string, Entity>>(new Map());
   const geofenceEntitiesRef = useRef<Entity[]>([]);
   const minimapViewerRef = useRef<Viewer | null>(null);
   const minimapContainerRef = useRef<HTMLDivElement>(null);
@@ -95,7 +98,7 @@ export function CesiumMap(): JSX.Element {
     });
 
     viewer.scene.globe.enableLighting = false;
-    viewer.scene.skyBox.show = false;
+    if (viewer.scene.skyBox) viewer.scene.skyBox.show = false;
     viewer.scene.backgroundColor = Color.fromCssColorString('#0a0e14');
     viewer.scene.globe.baseColor = Color.fromCssColorString('#1a2332');
 
@@ -130,6 +133,8 @@ export function CesiumMap(): JSX.Element {
       viewerRef.current = null;
       trackEntitiesRef.current.clear();
       leaderLineEntitiesRef.current.clear();
+      interceptorEntitiesRef.current.clear();
+      engagementLineEntitiesRef.current.clear();
       geofenceEntitiesRef.current = [];
     };
   }, []);
@@ -153,7 +158,7 @@ export function CesiumMap(): JSX.Element {
       requestRenderMode: true,
       maximumRenderTimeChange: Number.POSITIVE_INFINITY,
     });
-    minimap.scene.skyBox.show = false;
+    if (minimap.scene.skyBox) minimap.scene.skyBox.show = false;
     minimap.scene.backgroundColor = Color.fromCssColorString('#0a0e14');
     minimap.scene.globe.baseColor = Color.fromCssColorString('#1a2332');
     minimap.scene.morphTo2D(0);
@@ -171,7 +176,7 @@ export function CesiumMap(): JSX.Element {
           destination: pos,
           orientation: { direction: dir, up: cam.upWC },
         });
-        minimap.requestRender();
+        minimap.scene.requestRender();
       };
       mainViewer.camera.changed.addEventListener(syncCamera);
       return () => {
@@ -338,7 +343,7 @@ export function CesiumMap(): JSX.Element {
             if (llEnt && llEnt.polyline) {
               llEnt.polyline.positions = new ConstantProperty(positions);
               llEnt.show = true;
-              (llEnt.polyline.material as PolylineGlowMaterialProperty).color?.setValue(lineColor);
+              ((llEnt.polyline.material as PolylineGlowMaterialProperty).color as unknown as { setValue(v: Color): void })?.setValue(lineColor);
             } else {
               const created = viewer.entities.add({
                 id: llId,
@@ -388,6 +393,135 @@ export function CesiumMap(): JSX.Element {
     const unsubMap = useMapStore.subscribe(syncTracks);
     return () => { unsubTracks(); unsubMap(); };
   }, [layers.tracks]);
+
+  // Sync interceptors with store
+  useEffect(() => {
+    function syncInterceptors(): void {
+      const viewer = viewerRef.current;
+      if (!viewer) return;
+      const activeInterceptors = selectActiveInterceptors(useInterceptorStore.getState());
+      const existingIds = new Set(interceptorEntitiesRef.current.keys());
+      const showInterceptors = layers.interceptors;
+      const showEngagementLines = showInterceptors;
+
+      const friendBillboard = natoSymbolDataUrl('MILITAR_AMIGO', 32);
+      const interceptorColor = new Color(0.31, 0.73, 1.0, 0.95);
+
+      for (const i of activeInterceptors) {
+        if (!showInterceptors) {
+          const existing = interceptorEntitiesRef.current.get(i.interceptor_id);
+          if (existing) existing.show = false;
+          const el = engagementLineEntitiesRef.current.get(`${i.interceptor_id}-EL`);
+          if (el) el.show = false;
+          continue;
+        }
+
+        existingIds.delete(i.interceptor_id);
+        const pos = Cartesian3.fromDegrees(i.position.lon, i.position.lat, i.position.alt_m);
+        const statusLabel = i.status === 'CRUISE' ? 'CRT' : i.status === 'TERMINAL' ? 'TRM' : i.status === 'LAUNCH' ? 'LCH' : i.status === 'RTB' ? 'RTB' : i.status === 'READY' ? 'RDY' : i.status.substring(0, 3);
+        const labelText = `${i.interceptor_id}\n${statusLabel}`;
+        const ent = interceptorEntitiesRef.current.get(i.interceptor_id);
+
+        if (ent) {
+          ent.position = new ConstantPositionProperty(pos);
+          ent.show = true;
+          if (ent.billboard) {
+            ent.billboard.rotation = new ConstantProperty(
+              CesiumMath.toRadians(-i.telemetry.heading_deg),
+            );
+          }
+          if (ent.label) {
+            ent.label.text = new ConstantProperty(labelText);
+          }
+        } else {
+          const created = viewer.entities.add({
+            id: i.interceptor_id,
+            name: i.interceptor_id,
+            position: pos,
+            billboard: {
+              image: friendBillboard,
+              verticalOrigin: VerticalOrigin.CENTER,
+              horizontalOrigin: HorizontalOrigin.CENTER,
+              scale: 0.85,
+              rotation: CesiumMath.toRadians(-i.telemetry.heading_deg),
+              color: interceptorColor,
+            },
+            label: {
+              text: labelText,
+              font: 'bold 10px monospace',
+              fillColor: Color.fromCssColorString('#4a9eff'),
+              outlineColor: Color.BLACK,
+              outlineWidth: 2,
+              style: LabelStyle.FILL_AND_OUTLINE,
+              verticalOrigin: VerticalOrigin.TOP,
+              horizontalOrigin: HorizontalOrigin.LEFT,
+              pixelOffset: new Cartesian2(12, 0),
+              showBackground: true,
+              backgroundColor: Color.fromCssColorString('#0a0e14').withAlpha(0.7),
+            },
+          });
+          interceptorEntitiesRef.current.set(i.interceptor_id, created);
+        }
+
+        if (showEngagementLines && i.assigned_track_id) {
+          const targetTrack = useTrackStore.getState().tracks[i.assigned_track_id];
+          if (targetTrack) {
+            const targetPos = Cartesian3.fromDegrees(
+              targetTrack.position.lon,
+              targetTrack.position.lat,
+              targetTrack.position.alt_m,
+            );
+            const elId = `${i.interceptor_id}-EL`;
+            const elEnt = engagementLineEntitiesRef.current.get(elId);
+            const lineColor = Color.fromCssColorString('#4a9eff').withAlpha(0.6);
+
+            if (elEnt && elEnt.polyline) {
+              elEnt.polyline.positions = new ConstantProperty([pos, targetPos]);
+              elEnt.show = true;
+            } else {
+              const created = viewer.entities.add({
+                id: elId,
+                show: true,
+                polyline: {
+                  positions: [pos, targetPos],
+                  width: 1.5,
+                  material: new PolylineGlowMaterialProperty({
+                    color: lineColor,
+                    glowPower: 0.15,
+                    taperPower: 1.0,
+                  }),
+                  arcType: ArcType.GEODESIC,
+                },
+              });
+              engagementLineEntitiesRef.current.set(elId, created);
+            }
+          }
+        } else {
+          const el = engagementLineEntitiesRef.current.get(`${i.interceptor_id}-EL`);
+          if (el) el.show = false;
+        }
+      }
+
+      for (const goneId of existingIds) {
+        const ent = interceptorEntitiesRef.current.get(goneId);
+        if (ent) viewer.entities.remove(ent);
+        interceptorEntitiesRef.current.delete(goneId);
+        const el = engagementLineEntitiesRef.current.get(`${goneId}-EL`);
+        if (el) {
+          viewer.entities.remove(el);
+          engagementLineEntitiesRef.current.delete(`${goneId}-EL`);
+        }
+      }
+
+      viewer.scene.requestRender();
+    }
+
+    syncInterceptors();
+    const unsubInterceptors = useInterceptorStore.subscribe(syncInterceptors);
+    const unsubTracks = useTrackStore.subscribe(syncInterceptors);
+    const unsubMap = useMapStore.subscribe(syncInterceptors);
+    return () => { unsubInterceptors(); unsubTracks(); unsubMap(); };
+  }, [layers.interceptors]);
 
   // Slew-to-cue
   useEffect(() => {

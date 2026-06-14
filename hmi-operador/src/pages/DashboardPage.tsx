@@ -21,6 +21,7 @@ import { useTrackStore } from '@/store/trackStore';
 import { useSelectedTrack } from '@/hooks/useTracks';
 import { useCanAuthorizeLevel } from '@/hooks/useOperatorRole';
 import { useRecommendationStore } from '@/store/recommendationStore';
+import { useOperatorStore } from '@/store/operatorStore';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { useTranslation } from 'react-i18next';
 import { tracksApi } from '@/api/tracks';
@@ -41,6 +42,7 @@ export function DashboardPage(): JSX.Element {
   const pending = usePendingRecommendation();
   const activeRecLevel = pending?.authorization_level ?? recommendations[0]?.authorization_level ?? null;
   const canAuthorize = useCanAuthorizeLevel(activeRecLevel);
+  const layoutMode = useOperatorStore((s) => s.layoutMode);
 
   const [dialogDecision, setDialogDecision] = useState<EngagementDecision | null>(null);
 
@@ -122,16 +124,16 @@ export function DashboardPage(): JSX.Element {
         severity: payload.decision === 'AUTHORIZE' ? 'CRITICAL' : 'INFO',
         title:
           payload.decision === 'AUTHORIZE'
-            ? 'ENGAGEMENT AUTORIZADO'
+            ? t('dashboard.engagementAuthorized')
             : payload.decision === 'REJECT'
-              ? 'ENGAGEMENT RECHAZADO'
-              : 'DECISION DIFERIDA',
-        message: `Pista ${activeRec.track_id}. Registro en audit log.`,
+              ? t('dashboard.engagementRejected')
+              : t('dashboard.decisionDeferred'),
+        message: t('dashboard.engagementAuditMsg', { trackId: activeRec.track_id }),
         ts_ms: Date.now(),
         ack_required: false,
       });
     },
-    [activeRec],
+    [activeRec, t],
   );
 
   // Selecciona la primera pista al cargar si no hay seleccion
@@ -144,7 +146,7 @@ export function DashboardPage(): JSX.Element {
 
   return (
     <div className="flex w-full h-full">
-      {/* Sidebar izq: pistas */}
+      {layoutMode !== 'map-only' && (
       <Sidebar side="left" ariaLabel="Lista de pistas">
         <Card className="flex-1 flex flex-col overflow-hidden">
           <CardHeader>
@@ -176,6 +178,7 @@ export function DashboardPage(): JSX.Element {
           </CardContent>
         </Card>
       </Sidebar>
+      )}
 
       {/* Centro: mapa */}
       <div className="flex-1 relative">
@@ -186,7 +189,7 @@ export function DashboardPage(): JSX.Element {
         </div>
       </div>
 
-      {/* Sidebar der: detalle + recomendacion + interceptores */}
+      {layoutMode === '3col' && (
       <Sidebar side="right" width="w-[400px]" ariaLabel="Panel de decision">
         <RecommendationCard
           recommendation={activeRec}
@@ -198,6 +201,7 @@ export function DashboardPage(): JSX.Element {
         <TrackDetailsPanel track={selectedTrack} />
         <InterceptorStatus interceptors={interceptorsQuery.data ?? []} />
       </Sidebar>
+      )}
 
       <EngagementAuthDialog
         open={dialogDecision !== null}
